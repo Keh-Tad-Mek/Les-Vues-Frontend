@@ -71,7 +71,7 @@ function App() {
   const [PasswordBorderColor, setPasswordBorderColor] = useState("transparent")
   
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     console.log("Submit")
@@ -85,19 +85,41 @@ function App() {
 
 
     if (!(emailIsValid && strengthValue >= 80)){
-      //
+      // 
+    }
+    else{
+      try{
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: emailChecker,
+            password: passwordChecker
+          })
+        })
+
+        const data = await response.json()
+        console.log("Backend response:", data)
+      }catch(error){
+        console.error('Error sending to backend:', error)
+      };
+      
     }
   }
   
 
   return (
     <>
-      <form action="">
+      <form action=""
+        onSubmit={handleSubmit}
+        noValidate
+        autoComplete='off'>
         
         <h1>Les Vues</h1>
         
         <input 
-          type='email' 
           className="email-input"
           style={{  
             border: `1px solid ${EmailBorderColor}`,
@@ -146,8 +168,7 @@ function App() {
         </div>
 
         <p>Already signed up? <Link to="/signin">Sign in</Link></p>
-        <button type='submit'
-          onClick={handleSubmit}>Submit</button>
+        <button type='submit'>Submit</button>
       </form>
     </>
   )
