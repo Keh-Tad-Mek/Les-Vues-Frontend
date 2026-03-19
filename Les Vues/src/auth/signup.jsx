@@ -1,8 +1,6 @@
 import { useState } from 'react'
+import AuthForm from '../Components/AuthForm'
 import './signup.css'
-import { Link } from 'react-router-dom'
-
-
 
 function calculatePasswordStrength(password) {
   const checks = [
@@ -39,38 +37,31 @@ function calculatePasswordStrength(password) {
   }
 }
 
-
-
 function checkEmail(email){
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   if (!emailRegex.test(email)){
     var emailIsValid = false
     return {emailIsValid}
-  }
-
-  else {
+  } else {
     var emailIsValid = true
     return {emailIsValid}
   }
 }
 
-
-
-
-
-function App() {
+function signup() {
   const [passwordChecker, setPasswordChecker] = useState("")
   const [emailChecker, setEmailChecker] = useState("")
   const [emailFieldOutline, setEmailFieldOutline] = useState("none")
   const [PasswordStrengthVisibility, setPasswordStrengthVisibility] = useState("none")
+  
   // Call the function
   const { strengthValue, verbalStrengthValue, hue } = calculatePasswordStrength(passwordChecker)
   const { emailIsValid } = checkEmail(emailChecker)
+  
   const [EmailBorderColor, setEmailBorderColor] = useState("transparent")
   const [PasswordBorderColor, setPasswordBorderColor] = useState("transparent")
   
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -83,11 +74,9 @@ function App() {
       setPasswordBorderColor("transparent")
     }, 5000)
 
-
     if (!(emailIsValid && strengthValue >= 80)){
       // 
-    }
-    else{
+    } else {
       try{
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/signup`, {
           method: 'POST',
@@ -105,73 +94,33 @@ function App() {
       }catch(error){
         console.error('Error sending to backend:', error)
       };
-      
     }
   }
   
-
   return (
-    <>
-      <form action=""
-        onSubmit={handleSubmit}
-        noValidate
-        autoComplete='off'>
-        
-        <h1>Les Vues</h1>
-        
-        <input 
-          className="email-input"
-          style={{  
-            border: `1px solid ${EmailBorderColor}`,
-            outline: emailFieldOutline,
-          }}
-          placeholder='E-mail'
-          onChange={(e)=>setEmailChecker(e.target.value)}
-          onFocus={(e)=>setEmailFieldOutline("none")}
-        />
-
-        <input 
-          type='password' 
-          className="password-input"
-          placeholder='Password' 
-          value={passwordChecker}
-          style={{
-            border: `1px solid ${PasswordBorderColor}`
-          }}
-          onChange={(e)=>setPasswordChecker(e.target.value)}
-          onFocus={(e)=>setPasswordStrengthVisibility("flex")}
-          onBlur={(e)=>setPasswordStrengthVisibility("none")}
-        />
-          
-        <div 
-          className="password-strength"
-          style={{
-            display: PasswordStrengthVisibility,
-          }}
-        >
-          <span 
-            className="strength-label"
-            style={{
-              color: `hsl(${hue}, 100%, 50%)`,
-            }}
-          >
-            {verbalStrengthValue}
-          </span>
-          <progress 
-            value={strengthValue} 
-            max="100" 
-            className="strength-progress"
-            style={{
-              accentColor: `hsl(${hue}, 100%, 50%)`
-            }}
-          />
-        </div>
-
-        <p>Already signed up? <Link to="/signin">Sign in</Link></p>
-        <button type='submit'>Submit</button>
-      </form>
-    </>
+    <AuthForm
+      onSubmit={handleSubmit}
+      emailValue={emailChecker}
+      onEmailChange={setEmailChecker}
+      emailBorderColor={EmailBorderColor}
+      emailOutline={emailFieldOutline}
+      onEmailFocus={() => setEmailFieldOutline("none")}
+      passwordValue={passwordChecker}
+      onPasswordChange={setPasswordChecker}
+      passwordBorderColor={PasswordBorderColor}
+      onPasswordFocus={() => setPasswordStrengthVisibility("flex")}
+      onPasswordBlur={() => setPasswordStrengthVisibility("none")}
+      showStrengthMeter={true}
+      strengthVisibility={PasswordStrengthVisibility}
+      hue={hue}
+      verbalStrengthValue={verbalStrengthValue}
+      strengthValue={strengthValue}
+      footerText="Already signed up?"
+      footerLinkText="Sign in"
+      footerLinkTo="/signin"
+      submitButtonText="Submit"
+    />
   )
 }
 
-export default App
+export default signup

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import AuthForm from '../Components/AuthForm'
 import './signup.css'
 
-function App() {
+function signin() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [emailError, setEmailError] = useState(false)
   const [passwordError, setPasswordError] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     const isEmailEmpty = email.trim() === ""
@@ -17,23 +18,50 @@ function App() {
     setEmailError(isEmailEmpty)
     setPasswordError(isPasswordEmpty)
 
+    // FIX 1: This condition was backwards
+    // Original: if (isEmailEmpty && isPasswordEmpty) - wrong
+    // Should be: if NOT empty, then submit
     if (!isEmailEmpty && !isPasswordEmpty) {
-      console.log("Form valid, sending to backend...")
+      try{
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/signin`, {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',  // FIX 2: Capital T in Content-Type
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password
+          })
+        })
+
+        if (!response.ok) {  // FIX 3: Check if response failed
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log("Backend response:", data)
+        // FIX 4: Handle success (redirect, show message, etc.)
+      } catch(error) {
+        console.error("Error sending to backend:", error)  // FIX 5: Show actual error
+        // FIX 6: Show user-friendly error message
+      }
+    } else {
+      // FIX 7: Optionally show message that fields are required
+      console.log("Please fill in all fields")
     }
   }
 
-  // Effect to handle timeout for email error
+  // FIX 8: Fixed timer comment (was 5 minutes, actually 5 seconds)
   useEffect(() => {
     let timer
     if (emailError) {
       timer = setTimeout(() => {
         setEmailError(false)
-      }, 5000) // 5 minutes = 300000ms
+      }, 5000)  // Actually 5 seconds, not 5 minutes
     }
     return () => clearTimeout(timer)
   }, [emailError])
 
-  // Effect to handle timeout for password error
   useEffect(() => {
     let timer
     if (passwordError) {
@@ -45,45 +73,30 @@ function App() {
   }, [passwordError])
 
   return (
-    <>
-      <form onSubmit={handleSubmit}>
-        <h1>Les Vues</h1>
-        
-        <input 
-          type='email' 
-          className="email-input"
-          style={{  
-            border: `1px solid ${emailError ? 'red' : 'transparent'}`,
-          }}
-          placeholder='E-mail'
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value)
-            setEmailError(false)
-          }}
-        />
-
-        <input 
-          type='password' 
-          className="password-input"
-          placeholder='Password'
-          value={password}
-          style={{
-            border: `1px solid ${passwordError ? 'red' : 'transparent'}`
-          }}
-          onChange={(e) => {
-            setPassword(e.target.value)
-            setPasswordError(false)
-          }}
-        />
-
-        <p>Don't have an account? <Link to="/signup">Sign Up</Link></p>
-        <button type='submit'>Sign In</button>
-
-        <p style={{marginBottom:'18px', marginTop:'18px'}}><Link to="#">Forgot Password?</Link></p>
-      </form>
-    </>
+    <AuthForm
+      onSubmit={handleSubmit}
+      emailValue={email}
+      onEmailChange={(val) => {
+        setEmail(val)
+        setEmailError(false)
+      }}
+      emailBorderColor={emailError ? 'red' : 'transparent'}
+      passwordValue={password}
+      onPasswordChange={(val) => {
+        setPassword(val)
+        setPasswordError(false)
+      }}
+      passwordBorderColor={passwordError ? 'red' : 'transparent'}
+      footerText="Don't have an account?"
+      footerLinkText="Sign Up"
+      footerLinkTo="/signup"
+      submitButtonText="Sign In"
+    >
+      <p style={{marginBottom:'18px', marginTop:'18px'}}>
+        <Link to="#">Forgot Password?</Link>
+      </p>
+    </AuthForm>
   )
 }
 
-export default App
+export default signin
