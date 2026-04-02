@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SignIn from "./auth/signin"
 import SignUp from "./auth/signup"
+import EmailVerified from "./auth/email-verified"
 
 function AppRoutes(){
     return(
@@ -16,6 +17,7 @@ function AppRoutes(){
 
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
+                <Route path="/email-verified" element={<EmailVerified />} />
             </Routes>
         </BrowserRouter>
     )

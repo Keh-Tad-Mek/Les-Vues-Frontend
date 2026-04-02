@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import AuthForm from '../Components/AuthForm'
 import './signup.css'
+import { authClient } from '../lib/auth-client'
 
 function calculatePasswordStrength(password) {
   const checks = [
@@ -39,23 +40,15 @@ function calculatePasswordStrength(password) {
 
 function checkEmail(email){
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-  if (!emailRegex.test(email)){
-    var emailIsValid = false
-    return {emailIsValid}
-  } else {
-    var emailIsValid = true
-    return {emailIsValid}
-  }
+  return { emailIsValid: emailRegex.test(email) } // Simplified this for you
 }
 
-function signup() {
+function Signup() { // <-- Capitalized component name
   const [passwordChecker, setPasswordChecker] = useState("")
   const [emailChecker, setEmailChecker] = useState("")
   const [emailFieldOutline, setEmailFieldOutline] = useState("none")
   const [PasswordStrengthVisibility, setPasswordStrengthVisibility] = useState("none")
   
-  // Call the function
   const { strengthValue, verbalStrengthValue, hue } = calculatePasswordStrength(passwordChecker)
   const { emailIsValid } = checkEmail(emailChecker)
   
@@ -65,8 +58,6 @@ function signup() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    console.log("Submit")
-
     setEmailBorderColor(emailIsValid ? "transparent" : "red")
     setPasswordBorderColor(strengthValue >= 80 ? "transparent" : "red")
     setTimeout(() => {
@@ -74,26 +65,30 @@ function signup() {
       setPasswordBorderColor("transparent")
     }, 5000)
 
-    if (!(emailIsValid && strengthValue >= 80)){
-      // 
-    } else {
-      try{
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/signup`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+    if (emailIsValid && strengthValue >= 80) {
+      try {
+        const { data, error } = await authClient.signUp.email({
             email: emailChecker,
-            password: passwordChecker
-          })
-        })
+            password: passwordChecker,
+            name: "User",
+            callbackURL: `${window.location.origin}/email-verified`
+        });
 
-        const data = await response.json()
-        console.log("Backend response:", data)
-      }catch(error){
-        console.error('Error sending to backend:', error)
-      };
+        if (error) {
+            console.error("Error signing up:", error);
+        } 
+        
+        else {
+            console.log("Signed up!", data);
+            // Redirect user here
+        }
+        
+    } 
+    
+    catch (error) {
+        console.error("Network error:", error);
+    }
+
     }
   }
   
@@ -118,9 +113,9 @@ function signup() {
       footerText="Already signed up?"
       footerLinkText="Sign in"
       footerLinkTo="/signin"
-      submitButtonText="Submit"
+      submitButtonText="Signup"
     />
   )
 }
 
-export default signup
+export default Signup
