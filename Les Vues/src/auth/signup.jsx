@@ -5,11 +5,11 @@ import { authClient } from '../lib/auth-client'
 
 function calculatePasswordStrength(password) {
   const checks = [
-    /[A-Z]/,             
-    /[a-z]/,           
-    /[0-9]/,             
-    /[^A-Za-z0-9]/,      
-    /.{10,}/          
+    /[A-Z]/,
+    /[a-z]/,
+    /[0-9]/,
+    /[^A-Za-z0-9]/,
+    /.{10,}/
   ]
 
   const verbalStrengthDictionary = {
@@ -22,8 +22,8 @@ function calculatePasswordStrength(password) {
   }
 
   let strengthValue = 0
-  
-  checks.forEach((check)=>{
+
+  checks.forEach((check) => {
     if (check.test(password))
       strengthValue += 20
   })
@@ -38,23 +38,23 @@ function calculatePasswordStrength(password) {
   }
 }
 
-function checkEmail(email){
+function checkEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return { emailIsValid: emailRegex.test(email) } // Simplified this for you
+  return { emailIsValid: emailRegex.test(email) }
 }
 
-function Signup() { // <-- Capitalized component name
+function Signup() { 
   const [passwordChecker, setPasswordChecker] = useState("")
   const [emailChecker, setEmailChecker] = useState("")
   const [emailFieldOutline, setEmailFieldOutline] = useState("none")
   const [PasswordStrengthVisibility, setPasswordStrengthVisibility] = useState("none")
-  
+
   const { strengthValue, verbalStrengthValue, hue } = calculatePasswordStrength(passwordChecker)
   const { emailIsValid } = checkEmail(emailChecker)
-  
+
   const [EmailBorderColor, setEmailBorderColor] = useState("transparent")
   const [PasswordBorderColor, setPasswordBorderColor] = useState("transparent")
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -68,30 +68,29 @@ function Signup() { // <-- Capitalized component name
     if (emailIsValid && strengthValue >= 80) {
       try {
         const { data, error } = await authClient.signUp.email({
-            email: emailChecker,
-            password: passwordChecker,
-            name: "User",
-            callbackURL: `${window.location.origin}/email-verified`
+          email: emailChecker,
+          password: passwordChecker,
+          name: "User",
+          callbackURL: `${window.location.origin}/home`
         });
-
-        if (error) {
-            console.error("Error signing up:", error);
-        } 
         
-        else {
-            console.log("Signed up!", data);
-            // Redirect user here
+        if (error) {
+          console.error("Error signing up:", error);
         }
         
-    } 
-    
-    catch (error) {
+        else if (data?.user) {
+          alert("Check your email inbox and click the link to verify.")
+        }
+
+      }
+
+      catch (error) {
         console.error("Network error:", error);
-    }
+      }
 
     }
   }
-  
+
   return (
     <AuthForm
       onSubmit={handleSubmit}

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import AuthForm from '../Components/AuthForm'
 import './signup.css'
-import { authClient } from '../lib/auth-client' // <-- Imported the auth client
+import { authClient } from '../lib/auth-client'
 
-function Signin() { // <-- Capitalized component name
+function Signin() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [emailError, setEmailError] = useState(false)
@@ -29,7 +29,7 @@ function Signin() { // <-- Capitalized component name
       if (error) {
         console.error("Error signing in:", error.message) 
         // You can set an error state here to show the user
-      } else {
+      } else if(data?.user) {
         console.log("Signed in successfully!", data)
         // Redirect user here, e.g., using React Router's useNavigate()
       }
