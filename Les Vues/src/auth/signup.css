@@ -202,3 +202,46 @@ a:hover {
   font-family: monospace;
   font-size: 14px;
 }
+
+/* OTP Popup Overlay Styles */
+.otp-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 1000; /* Ensure it sits above everything */
+  justify-content: center;
+  align-items: center;
+}
+
+.otp-content {
+  background-color: var(--form-background);
+  padding: 40px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 35px -10px var(--shadow-color);
+  text-align: center;
+}
+
+.otp-content p {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.otp-content input{
+  width: 300px;
+  height: 35px;
+  margin-bottom: 20px;
+  border: none;
+  text-indent: 10px;
+  border-radius: 8px;
+  background-color: var(--input-background);
+  color: var(--text-color);
+  /* box-shadow: 0 4px 8px var(--shadow-color); */
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}

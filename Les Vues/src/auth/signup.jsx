@@ -1,93 +1,106 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AuthForm from '../Components/AuthForm'
 import './signup.css'
 import { authClient } from '../lib/auth-client'
 
 function calculatePasswordStrength(password) {
-  const checks = [
-    /[A-Z]/,
-    /[a-z]/,
-    /[0-9]/,
-    /[^A-Za-z0-9]/,
-    /.{10,}/
-  ]
+  const checks = [/[A-Z]/,
+                 /[a-z]/, 
+                 /[0-9]/, 
+                 /[^A-Za-z0-9]/, 
+                 /.{10,}/]
 
-  const verbalStrengthDictionary = {
-    0: "Weak",
+
+
+  const verbalStrengthDictionary = { 
+    0: "Weak", 
     20: "Weak",
     40: "Medium",
-    60: "Ok",
-    80: "Good",
-    100: "Strong"
+    60: "Ok", 
+    80: "Good", 
+    100: "Strong" 
   }
+
 
   let strengthValue = 0
 
-  checks.forEach((check) => {
-    if (check.test(password))
-      strengthValue += 20
+  checks.forEach((check) => { 
+    if (check.test(password)) 
+      strengthValue += 20 
   })
+
 
   const verbalStrengthValue = verbalStrengthDictionary[strengthValue]
   const hue = strengthValue <= 20 ? 0 : (strengthValue - 20) * 1.5
-
-  return {
-    strengthValue,
-    verbalStrengthValue,
-    hue
-  }
+  return { strengthValue, verbalStrengthValue, hue }
 }
+
 
 function checkEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return { emailIsValid: emailRegex.test(email) }
 }
 
-function Signup() { 
-  const [passwordChecker, setPasswordChecker] = useState("")
+
+function Signup() {
+  const navigate = useNavigate()
+  const timerRef = useRef(null)
+
   const [emailChecker, setEmailChecker] = useState("")
+  const [passwordChecker, setPasswordChecker] = useState("")
+  const [otpValue, setOtpValue] = useState("")
   const [emailFieldOutline, setEmailFieldOutline] = useState("none")
   const [PasswordStrengthVisibility, setPasswordStrengthVisibility] = useState("none")
+  const [displayOTPField, setdisplayOTPField] = useState("none") 
+  const [EmailBorderColor, setEmailBorderColor] = useState("transparent")
+  const [PasswordBorderColor, setPasswordBorderColor] = useState("transparent")
 
   const { strengthValue, verbalStrengthValue, hue } = calculatePasswordStrength(passwordChecker)
   const { emailIsValid } = checkEmail(emailChecker)
 
-  const [EmailBorderColor, setEmailBorderColor] = useState("transparent")
-  const [PasswordBorderColor, setPasswordBorderColor] = useState("transparent")
-
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (timerRef.current) clearTimeout(timerRef.current)
 
     setEmailBorderColor(emailIsValid ? "transparent" : "red")
     setPasswordBorderColor(strengthValue >= 80 ? "transparent" : "red")
-    setTimeout(() => {
-      setEmailBorderColor("transparent")
-      setPasswordBorderColor("transparent")
+
+    timerRef.current = setTimeout(() => {
+        setEmailBorderColor("transparent")
+        setPasswordBorderColor("transparent")
+        timerRef.current = null
     }, 5000)
 
     if (emailIsValid && strengthValue >= 80) {
-      try {
-        const { data, error } = await authClient.signUp.email({
-          email: emailChecker,
-          password: passwordChecker,
-          name: "User",
-          callbackURL: `${window.location.origin}/home`
-        });
-        
-        if (error) {
-          console.error("Error signing up:", error);
-        }
-        
-        else if (data?.user) {
-          alert("Check your email inbox and click the link to verify.")
-        }
+      const fallbackName = emailChecker.split('@')[0]
+      const { data, error } = await authClient.signUp.email({
+        email: emailChecker,
+        password: passwordChecker,
+        name: fallbackName,
+      })
 
+      if (error) {
+        console.error("Signup failed:", error.message)
+        alert(error.message || "Failed to start signup process")
+      } else {
+        setdisplayOTPField("flex")
       }
+    }
+  }
 
-      catch (error) {
-        console.error("Network error:", error);
-      }
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+    const { data, error } = await authClient.emailOtp.verifyEmail({
+      email: emailChecker,
+      otp: otpValue
+    })
 
+    if (error) {
+      console.error("Verification failed:", error.message)
+      alert("Invalid Code")
+    } else {
+      navigate("/home", { replace: true })
     }
   }
 
@@ -113,6 +126,11 @@ function Signup() {
       footerLinkText="Sign in"
       footerLinkTo="/signin"
       submitButtonText="Signup"
+      displayOTPField={displayOTPField}
+      otpValue={otpValue}
+      onOtpChange={setOtpValue}
+      onVerifyOtp={handleVerifyOtp}
+      onCloseOtp={() => setdisplayOTPField("none")} // Handled here
     />
   )
 }
