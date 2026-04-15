@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthForm from '../Components/AuthForm'
-import './signup.css'
+import signupStyles from './signup.module.css'
 import { authClient } from '../lib/auth-client'
 
 function Signin() {
@@ -93,42 +93,44 @@ function Signin() {
   }, [emailError, passwordError, errorMessage])
 
   return (
-    <div className="signin-container">
-      {errorMessage && (
-        <div style={{ color: 'red', textAlign: 'center', marginBottom: '10px' }}>
-          {errorMessage}
-        </div>
-      )}
-      
-      <AuthForm
-        onSubmit={handleSubmit}
-        emailValue={email}
-        onEmailChange={(val) => {
-          setEmail(val)
-          setEmailError(false)
-        }}
-        emailBorderColor={emailError ? 'red' : 'transparent'}
-        passwordValue={password}
-        onPasswordChange={(val) => {
-          setPassword(val)
-          setPasswordError(false)
-        }}
-        passwordBorderColor={passwordError ? 'red' : 'transparent'}
-        footerText="Don't have an account?"
-        footerLinkText="Sign Up"
-        footerLinkTo="/signup"
-        submitButtonText="Login"
+    <div className={signupStyles.root}>
+      <div className="signin-container">
+        {errorMessage && (
+          <div style={{ color: 'red', textAlign: 'center', marginBottom: '10px' }}>
+            {errorMessage}
+          </div>
+        )}
         
-        // OTP Props (Matching your Signup.jsx logic)
-        displayOTPField={displayOTPField}
-        otpValue={otpValue}
-        onOtpChange={setOtpValue}
-        onVerifyOtp={handleVerifyOtp}
-      >
-        <p style={{ marginBottom: '18px', marginTop: '18px' }}>
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </p>
-      </AuthForm>
+        <AuthForm
+          onSubmit={handleSubmit}
+          emailValue={email}
+          onEmailChange={(val) => {
+            setEmail(val)
+            setEmailError(false)
+          }}
+          emailBorderColor={emailError ? 'red' : 'transparent'}
+          passwordValue={password}
+          onPasswordChange={(val) => {
+            setPassword(val)
+            setPasswordError(false)
+          }}
+          passwordBorderColor={passwordError ? 'red' : 'transparent'}
+          footerText="Don't have an account?"
+          footerLinkText="Sign Up"
+          footerLinkTo="/signup"
+          submitButtonText="Login"
+          
+          // OTP Props (Matching your Signup.jsx logic)
+          displayOTPField={displayOTPField}
+          otpValue={otpValue}
+          onOtpChange={setOtpValue}
+          onVerifyOtp={handleVerifyOtp}
+        >
+          <p style={{ marginBottom: '18px', marginTop: '18px' }}>
+            <Link to="/forgot-password">Forgot Password?</Link>
+          </p>
+        </AuthForm>
+      </div>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AuthForm from '../Components/AuthForm'
-import './signup.css'
+import signupStyles from './signup.module.css'
 import { authClient } from '../lib/auth-client'
 
 function calculatePasswordStrength(password) {
@@ -10,8 +10,6 @@ function calculatePasswordStrength(password) {
                  /[0-9]/, 
                  /[^A-Za-z0-9]/, 
                  /.{10,}/]
-
-
 
   const verbalStrengthDictionary = { 
     0: "Weak", 
@@ -105,33 +103,35 @@ function Signup() {
   }
 
   return (
-    <AuthForm
-      onSubmit={handleSubmit}
-      emailValue={emailChecker}
-      onEmailChange={setEmailChecker}
-      emailBorderColor={EmailBorderColor}
-      emailOutline={emailFieldOutline}
-      onEmailFocus={() => setEmailFieldOutline("none")}
-      passwordValue={passwordChecker}
-      onPasswordChange={setPasswordChecker}
-      passwordBorderColor={PasswordBorderColor}
-      onPasswordFocus={() => setPasswordStrengthVisibility("flex")}
-      onPasswordBlur={() => setPasswordStrengthVisibility("none")}
-      showStrengthMeter={true}
-      strengthVisibility={PasswordStrengthVisibility}
-      hue={hue}
-      verbalStrengthValue={verbalStrengthValue}
-      strengthValue={strengthValue}
-      footerText="Already signed up?"
-      footerLinkText="Sign in"
-      footerLinkTo="/signin"
-      submitButtonText="Signup"
-      displayOTPField={displayOTPField}
-      otpValue={otpValue}
-      onOtpChange={setOtpValue}
-      onVerifyOtp={handleVerifyOtp}
-      onCloseOtp={() => setdisplayOTPField("none")} // Handled here
-    />
+    <div className={signupStyles.root}>
+        <AuthForm
+          onSubmit={handleSubmit}
+          emailValue={emailChecker}
+          onEmailChange={setEmailChecker}
+          emailBorderColor={EmailBorderColor}
+          emailOutline={emailFieldOutline}
+          onEmailFocus={() => setEmailFieldOutline("none")}
+          passwordValue={passwordChecker}
+          onPasswordChange={setPasswordChecker}
+          passwordBorderColor={PasswordBorderColor}
+          onPasswordFocus={() => setPasswordStrengthVisibility("flex")}
+          onPasswordBlur={() => setPasswordStrengthVisibility("none")}
+          showStrengthMeter={true}
+          strengthVisibility={PasswordStrengthVisibility}
+          hue={hue}
+          verbalStrengthValue={verbalStrengthValue}
+          strengthValue={strengthValue}
+          footerText="Already signed up?"
+          footerLinkText="Sign in"
+          footerLinkTo="/signin"
+          submitButtonText="Signup"
+          displayOTPField={displayOTPField}
+          otpValue={otpValue}
+          onOtpChange={setOtpValue}
+          onVerifyOtp={handleVerifyOtp}
+          onCloseOtp={() => setdisplayOTPField("none")} // Handled here
+        />
+    </div>
   )
 }
 

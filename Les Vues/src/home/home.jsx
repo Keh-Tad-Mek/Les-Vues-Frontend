@@ -1,9 +1,16 @@
-import { useState, useEffect } from 'react'
+import homeStyles from './home.module.css';
 
-function home(){
-    return(
-        <p>Testing</p>
+function Home() {
+    return (
+        <div className={homeStyles.root}>
+            <header className={homeStyles.header}>
+                <div className={homeStyles.searchField}>
+                    <input type="text" className={homeStyles.searchInput} placeholder='Search Movies'/>
+                    <button></button>
+                </div>
+            </header>
+        </div>
     )
 }
 
-export default home
+export default Home;

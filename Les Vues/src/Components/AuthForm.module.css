@@ -1,0 +1,113 @@
+/* We use global variables here, make sure your :root variables are in your main index.css */
+.formContainer {
+  background-color: var(--form-background);
+  border-radius: 16px;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.formContainer h1 {
+  color: var(--header-color);
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.formContainer p {
+  font-family: monospace;
+  margin-bottom: 30px;
+  color: var(--text-color);
+}
+
+.formContainer a {
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.formContainer a:hover {
+  color: hsl(210, 100%, 50%);
+}
+
+.inputField {
+  width: 300px;
+  height: 35px;
+  margin-bottom: 20px;
+  border: none;
+  text-indent: 10px;
+  border-radius: 8px;
+  background-color: var(--input-background);
+  color: var(--text-color);
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.inputField:focus {
+  outline: none;
+}
+
+.inputField::placeholder {
+  color: var(--placeholder-color);
+  opacity: 1;
+}
+
+.submitBtn {
+  width: 300px;
+  height: 35px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--button-background);
+  color: var(--text-color);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  margin-bottom: 5px;
+}
+
+.submitBtn:hover {
+  background-color: var(--button-hover);
+}
+
+.passwordStrength {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 20px;
+  width: 250px;
+  height: 15px;
+  border-radius: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.strengthLabel {
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.otpPopup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.otpContent {
+  background-color: var(--form-background);
+  padding: 40px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 35px -10px var(--shadow-color);
+  text-align: center;
+}

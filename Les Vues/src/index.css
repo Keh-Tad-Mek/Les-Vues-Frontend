@@ -1,0 +1,46 @@
+/* index.css */
+:root {
+  --body-background: hsl(0, 0%, 9%);
+  --form-background: hsl(0, 0%, 12%);
+  --input-background: hsl(0, 0%, 18%);
+  --button-background: hsl(0, 0%, 18%);
+  --button-hover: hsl(0, 0%, 15%);
+  --header-color: hsl(0, 0%, 92%);
+  --text-color: hsl(0, 0%, 80%);
+  --placeholder-color: hsl(0, 0%, 45%);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --focus-ring: 0 0 0 3px hsla(0, 0%, 70%, 0.3);
+}
+
+:root.light-mode {
+  --body-background: hsl(0, 0%, 85%);
+  --form-background: hsl(0, 0%, 95%);
+  --input-background: hsl(0, 0%, 100%);
+  --button-background: hsl(0, 0%, 100%);
+  --button-hover: hsl(0, 0%, 85%);
+  --header-color: hsl(0, 0%, 15%);
+  --text-color: hsl(0, 0%, 25%);
+  --placeholder-color: hsl(0, 0%, 60%);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --focus-ring: 0 0 0 3px hsla(0, 0%, 50%, 0.3);
+}
+
+/* This kills the default browser margin */
+* {
+  box-sizing: border-box;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--body-background); /* Force the background color */
+  transition: background-color 0.2s ease;
+}
+
+#root {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
