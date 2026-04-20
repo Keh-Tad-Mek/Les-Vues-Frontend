@@ -1,45 +1,31 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AuthForm from '../Components/AuthForm'
-import signupStyles from './signup.module.css'
+import authStyles from '../Components/AuthForm.module.css' // Swapped import path
 import { authClient } from '../lib/auth-client'
 
 function calculatePasswordStrength(password) {
-  const checks = [/[A-Z]/,
-                 /[a-z]/, 
-                 /[0-9]/, 
-                 /[^A-Za-z0-9]/, 
-                 /.{10,}/]
+  const checks = [/[A-Z]/, /[a-z]/, /[0-9]/, /[^A-Za-z0-9]/, /.{10,}/]
 
   const verbalStrengthDictionary = { 
-    0: "Weak", 
-    20: "Weak",
-    40: "Medium",
-    60: "Ok", 
-    80: "Good", 
-    100: "Strong" 
+    0: "Weak", 20: "Weak", 40: "Medium", 60: "Ok", 80: "Good", 100: "Strong" 
   }
-
 
   let strengthValue = 0
 
   checks.forEach((check) => { 
-    if (check.test(password)) 
-      strengthValue += 20 
+    if (check.test(password)) strengthValue += 20 
   })
-
 
   const verbalStrengthValue = verbalStrengthDictionary[strengthValue]
   const hue = strengthValue <= 20 ? 0 : (strengthValue - 20) * 1.5
   return { strengthValue, verbalStrengthValue, hue }
 }
 
-
 function checkEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return { emailIsValid: emailRegex.test(email) }
 }
-
 
 function Signup() {
   const navigate = useNavigate()
@@ -103,7 +89,7 @@ function Signup() {
   }
 
   return (
-    <div className={signupStyles.root}>
+    <div className={authStyles.root}>
         <AuthForm
           onSubmit={handleSubmit}
           emailValue={emailChecker}
@@ -129,7 +115,7 @@ function Signup() {
           otpValue={otpValue}
           onOtpChange={setOtpValue}
           onVerifyOtp={handleVerifyOtp}
-          onCloseOtp={() => setdisplayOTPField("none")} // Handled here
+          onCloseOtp={() => setdisplayOTPField("none")} 
         />
     </div>
   )

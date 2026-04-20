@@ -1,8 +1,58 @@
-/* We use global variables here, make sure your :root variables are in your main index.css */
+/* AuthForm.module.css */
+
+/* Kills the default browser margins locally without needing an index.css */
+:global(body) {
+  margin: 0;
+  padding: 0;
+}
+
+/* The Wrapper (Replaces signup.module.css).
+  All your variables are declared HERE so they don't leak anywhere else in the app. 
+*/
+.root {
+  --body-background: hsl(0, 0%, 9%);
+  --form-background: hsl(0, 0%, 12%);
+  --input-background: hsl(0, 0%, 18%);
+  --button-background: hsl(0, 0%, 18%);
+  --button-hover: hsl(0, 0%, 15%);
+  --header-color: hsl(0, 0%, 92%);
+  --text-color: hsl(0, 0%, 80%);
+  --placeholder-color: hsl(0, 0%, 45%);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --focus-ring: 0 0 0 3px hsla(0, 0%, 70%, 0.3);
+
+  background-color: var(--body-background);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  min-width: 100vw;
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+:global(.light-mode) .root {
+  --body-background: hsl(0, 0%, 85%);
+  --form-background: hsl(0, 0%, 95%);
+  --input-background: hsl(0, 0%, 100%);
+  --button-background: hsl(0, 0%, 100%);
+  --button-hover: hsl(0, 0%, 85%);
+  --header-color: hsl(0, 0%, 15%);
+  --text-color: hsl(0, 0%, 25%);
+  --placeholder-color: hsl(0, 0%, 60%);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --focus-ring: 0 0 0 3px hsla(0, 0%, 50%, 0.3);
+}
+
+.root * {
+  box-sizing: border-box;
+}
+
+/* The Rest of your exact form styles */
 .formContainer {
   background-color: var(--form-background);
   border-radius: 16px;
-  padding: 10px;
+  padding: 14px; /* Kept at 40px so it isn't cramped */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -97,6 +147,7 @@
   background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(5px);
   z-index: 1000;
+  display: flex;
   justify-content: center;
   align-items: center;
 }

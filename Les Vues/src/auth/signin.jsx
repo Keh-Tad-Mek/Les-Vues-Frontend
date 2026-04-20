@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthForm from '../Components/AuthForm'
-import signupStyles from './signup.module.css'
+import authStyles from '../Components/AuthForm.module.css' // Swapped import path
 import { authClient } from '../lib/auth-client'
 
 function Signin() {
@@ -26,7 +26,6 @@ function Signin() {
     setPasswordError(isPasswordEmpty)
 
     if (!isEmailEmpty && !isPasswordEmpty) {
-      // 1. Attempt Sign In
       const { data, error } = await authClient.signIn.email({
         email: email,
         password: password,
@@ -35,9 +34,8 @@ function Signin() {
             navigate("/home", { replace: true })
         },
         onError: (ctx) => {
-            // Better Auth returns a specific error if verification is required
             if (ctx.error.status === 403 || ctx.error.message.includes("email_not_verified")) {
-                handleResendOtp() // Trigger OTP send if they aren't verified
+                handleResendOtp() 
             } else {
                 setErrorMessage(ctx.error.message || "Invalid credentials")
                 console.error("Login Error:", ctx.error)
@@ -47,11 +45,10 @@ function Signin() {
     }
   }
 
-  // Helper to trigger OTP if the user exists but isn't verified
   const handleResendOtp = async () => {
     const { error } = await authClient.emailOtp.sendVerificationOtp({
       email: email,
-      type: "sign-in" // This sends the OTP to the user
+      type: "sign-in" 
     })
 
     if (!error) {
@@ -62,7 +59,6 @@ function Signin() {
     }
   }
 
-  // 2. Verify OTP during Sign-in flow
   const handleVerifyOtp = async (e) => {
     e.preventDefault()
     
@@ -74,13 +70,10 @@ function Signin() {
     if (error) {
       setErrorMessage("Invalid Code")
     } else {
-      // Once verified, Better Auth (with autoSignInAfterVerification) 
-      // will establish the session.
       navigate("/home", { replace: true })
     }
   }
 
-  // Clear errors after timeout
   useEffect(() => {
     if (emailError || passwordError || errorMessage) {
       const timer = setTimeout(() => {
@@ -93,7 +86,7 @@ function Signin() {
   }, [emailError, passwordError, errorMessage])
 
   return (
-    <div className={signupStyles.root}>
+    <div className={authStyles.root}>
       <div className="signin-container">
         {errorMessage && (
           <div style={{ color: 'red', textAlign: 'center', marginBottom: '10px' }}>
@@ -119,8 +112,6 @@ function Signin() {
           footerLinkText="Sign Up"
           footerLinkTo="/signup"
           submitButtonText="Login"
-          
-          // OTP Props (Matching your Signup.jsx logic)
           displayOTPField={displayOTPField}
           otpValue={otpValue}
           onOtpChange={setOtpValue}
