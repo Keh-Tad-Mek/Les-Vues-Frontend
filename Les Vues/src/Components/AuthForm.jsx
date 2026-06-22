@@ -2,12 +2,32 @@ import { Link } from 'react-router-dom'
 import authStyles from './AuthForm.module.css' // Import the new module
 
 export default function AuthForm({
-  onSubmit, emailValue, onEmailChange, emailBorderColor, displayOTPField = "none",
-  emailOutline = "initial", onEmailFocus, passwordValue, onPasswordChange,
-  passwordBorderColor, onPasswordFocus, onPasswordBlur, showStrengthMeter = false,
-  strengthVisibility = "none", hue = 0, verbalStrengthValue = "", strengthValue = 0,
-  footerText, footerLinkText, footerLinkTo, submitButtonText, otpValue, onOtpChange,
-  onVerifyOtp, onCloseOtp, children
+  onSubmit, 
+  emailValue, 
+  onEmailChange,
+  emailBorderColor,
+  displayOTPField = "none",
+  emailOutline = "initial", 
+  onEmailFocus, 
+  passwordValue, 
+  onPasswordChange,
+  passwordBorderColor, 
+  onPasswordFocus, 
+  onPasswordBlur, 
+  showStrengthMeter = false,
+  strengthVisibility = "none", 
+  hue = 0,
+  verbalStrengthValue = "", 
+  strengthValue = 0,
+  footerText, 
+  footerLinkText,
+  footerLinkTo, 
+  submitButtonText, 
+  otpValue, 
+  onOtpChange,
+  onVerifyOtp, 
+  onCloseOtp, 
+  children
 }) {
   return (
     <div>
