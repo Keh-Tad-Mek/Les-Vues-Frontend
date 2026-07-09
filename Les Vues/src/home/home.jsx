@@ -10,6 +10,7 @@ function Home() {
     const [cachedMovies, setCachedMovies] = useState([]);
     const [cachedSeries, setCachedSeries] = useState([]);
     const [networkPage, setNetworkPage] = useState(0);
+    const [searchResultPage, setSearchResultPage] = useState(0)
 
     const [searchResults, setSearchResults] = useState([]);
     const [movieSearch, setMovieSearch] = useState("");
@@ -17,9 +18,10 @@ function Home() {
 
     const movieObserver = useRef();
     const seriesObserver = useRef();
-    const isFetching = useRef(false); // Prevents the observer from spamming requests
+    const searchObserver = useRef();
+    const isFetching = useRef(false);
+    const isFetchingSearch = useRef(false)
 
-    // Helper to prevent duplicate items based on their unique ID
     const filterUnique = (prevList, newList) => {
         const existingIds = new Set(prevList.map(item => item.id));
         return [...prevList, ...newList.filter(item => !existingIds.has(item.id))];
@@ -54,15 +56,38 @@ function Home() {
         }
     };
 
-    useEffect(() => {
-        if (movieSearch.trim()) search();
-    }, [movieSearch]);
+    const search = async (page) => {
+        if (isFetchingSearch.current) return;
+        isFetchingSearch.current = true
 
-    const search = async () => {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/movies/search?query=${movieSearch}`);
-        const data = await response.json();
-        setSearchResults(data);
+        try{
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/movies/search?query=${movieSearch}&page=${page}`);
+            const data = await response.json();
+            if (page === 1){
+                setSearchResults(data.result);
+            } else {
+                setSearchResults(prev => filterUnique(prev, data.result))
+            }
+            setSearchResultPage(data.page)
+        }
+        catch(error){
+            console.error(error)
+        }
+        finally{
+            isFetchingSearch.current = false
+        }
     };
+
+    // --- SEARCH EFFECT LOGIC FIX ---
+    useEffect(() => {
+        if (movieSearch.trim()) {
+            search(1);
+            setDisplaySearchResults(true);
+        } else {
+            setSearchResults([]);
+            setDisplaySearchResults(false);
+        }
+    }, [movieSearch]);
 
     const lastMovieElementRef = useCallback(node => {
         if (movieObserver.current) movieObserver.current.disconnect();
@@ -76,7 +101,15 @@ function Home() {
                 }
             }
         });
-        if (node) movieObserver.current.observe(node);
+        if (node){
+            movieObserver.current.observe(node);
+        } 
+        else{
+            if (movieObserver.current){
+                movieObserver.current.disconnect()
+                movieObserver.current = null
+            }
+        }
     }, [cachedMovies, networkPage]);
 
     const lastSeriesElementRef = useCallback(node => {
@@ -91,8 +124,35 @@ function Home() {
                 }
             }
         });
-        if (node) seriesObserver.current.observe(node);
+
+        if (node) {
+            seriesObserver.current.observe(node);
+        } 
+        else {
+            if (seriesObserver.current){
+                seriesObserver.current.disconnect()
+                seriesObserver.current = null
+            }
+        }
     }, [cachedSeries, networkPage]);
+
+    const searchResultPaginRef = useCallback(node =>{
+        if (searchObserver.current) searchObserver.current.disconnect();
+        searchObserver.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && !isFetchingSearch.current){
+                search(searchResultPage + 1)
+            }
+        })
+        if (node){
+            searchObserver.current.observe(node)
+        }
+        else{
+            if (searchObserver.current){
+                searchObserver.current.disconnect()
+                searchObserver.current = null
+            }
+        }
+    }, [searchResultPage])
 
     useEffect(() => { 
         fetchTrending(1, "initial"); 
@@ -107,15 +167,23 @@ function Home() {
                             type="text" 
                             className={homeStyles.searchInput} 
                             placeholder='Search Movies'
+                            value={movieSearch}
                             onChange={(e) => setMovieSearch(e.target.value)}
-                            onBlur={() => setTimeout(() => setDisplaySearchResults(false), 200)}
-                            onFocus={() => { if(searchResults.length > 0) setDisplaySearchResults(true) }}
+                            // --- FOCUS/BLUR LOGIC FIX ---
+                            onFocus={() => {
+                                if (movieSearch.trim() !== "") {
+                                    setDisplaySearchResults(true);
+                                }
+                            }}
+                            onBlur={() => {
+                                setDisplaySearchResults(false);
+                            }}
                         />
                         <button>
                             <FontAwesomeIcon className={homeStyles.searchIcon} icon={faMagnifyingGlass}/>
                         </button>
                     </div>
-                    {displaySearchResults && (
+                    {displaySearchResults && searchResults.length > 0 && (
                         <div className={homeStyles.searchResults}>
                             {searchResults.map(item => (
                                 <div key={item.id} className={homeStyles.searchResultItem}>
@@ -123,6 +191,7 @@ function Home() {
                                     <span>{item.title || item.name}</span>
                                 </div>
                             ))}
+                            <div ref={searchResultPaginRef} style={{ height: '20px' }} />
                         </div>
                     )}
                 </div>
