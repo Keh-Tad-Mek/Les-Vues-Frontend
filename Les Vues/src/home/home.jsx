@@ -21,73 +21,170 @@ function Home() {
     const searchObserver = useRef();
     const isFetching = useRef(false);
     const isFetchingSearch = useRef(false)
+    const CACHE_TTL = 12 * 60 * 60 * 1000;
+
+
+    const getCachedData = (key) => {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+
+        const entry = JSON.parse(raw);
+        const now = Date.now();
+
+        if (now - entry.timestamp > CACHE_TTL) {
+            localStorage.removeItem(key);
+            return null;
+        }
+
+        return entry;
+    };
+
+
+    const setCachedData = (key, data, page) => {
+        const entry = {
+            data: data,
+            page: page,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(key, JSON.stringify(entry));
+    };
+
+
+    const updateCachedData = (key, newData, page) => {
+        const existing = getCachedData(key);
+        if (!existing) {
+            setCachedData(key, newData, page);
+            return;
+        }
+
+        const mergedData = filterUnique(existing.data, newData);
+        const entry = {
+            data: mergedData,
+            page: page,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(key, JSON.stringify(entry));
+    };
+
 
     const filterUnique = (prevList, newList) => {
         const existingIds = new Set(prevList.map(item => item.id));
         return [...prevList, ...newList.filter(item => !existingIds.has(item.id))];
     };
 
+
     const fetchTrending = async (targetPage, trigger) => {
         if (isFetching.current) return;
         isFetching.current = true;
 
         try {
+            const cachedMovies = getCachedData("trendingMovies");
+            const cachedSeries = getCachedData("trendingSeries");
+
+            if (cachedMovies && cachedSeries && trigger === "initial") {
+                setVisibleMovies(cachedMovies.data);
+                setVisibleSeries(cachedSeries.data);
+                setNetworkPage(cachedMovies.page);
+                isFetching.current = false;
+                return;
+            }
+
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/movies/get_popular_movies?page=${targetPage}`);
             const data = await response.json();
-            
+
             const newMovies = data.results.filter(i => i.media_type === "movie");
             const newSeries = data.results.filter(i => i.media_type === "tv");
 
             if (trigger === "initial") {
                 setVisibleMovies(newMovies);
                 setVisibleSeries(newSeries);
-            } else if (trigger === "movies") {
+
+                setCachedData("trendingMovies", newMovies, data.page);
+                setCachedData("trendingSeries", newSeries, data.page);
+            } 
+            
+            else if (trigger === "movies") {
                 setVisibleMovies(prev => filterUnique(prev, newMovies));
                 setCachedSeries(prev => filterUnique(prev, newSeries));
-            } else if (trigger === "series") {
+
+                updateCachedData("trendingMovies", newMovies, data.page);
+                updateCachedData("trendingSeries", newSeries, data.page);
+            } 
+            
+            else if (trigger === "series") {
                 setVisibleSeries(prev => filterUnique(prev, newSeries));
                 setCachedMovies(prev => filterUnique(prev, newMovies));
+
+                updateCachedData("trendingSeries", newSeries, data.page);
+                updateCachedData("trendingMovies", newMovies, data.page);
             }
             setNetworkPage(data.page);
-        } catch (error) { 
-            console.error(error); 
+        } catch (error) {
+            console.error(error);
         } finally {
             isFetching.current = false;
         }
     };
 
+
     const search = async (page) => {
         if (isFetchingSearch.current) return;
-        isFetchingSearch.current = true
+        isFetchingSearch.current = true;
 
-        try{
+        try {
+            const cacheKey = movieSearch.trim().toLowerCase();
+            const cached = getCachedData(cacheKey);
+
+
+            if ((cached && page === 1) || (cached && page <= cached.page)) {
+                setSearchResults(cached.data);
+                setSearchResultPage(cached.page);
+                isFetchingSearch.current = false;
+                return;
+            }
+
+
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/movies/search?query=${movieSearch}&page=${page}`);
             const data = await response.json();
-            if (page === 1){
+
+            if (page === 1) {
                 setSearchResults(data.result);
-            } else {
-                setSearchResults(prev => filterUnique(prev, data.result))
+                setCachedData(cacheKey, data.result, data.page);
+            } 
+            
+            else {
+                const mergedResults = filterUnique(searchResults, data.result);
+                setSearchResults(mergedResults);
+                setCachedData(cacheKey, mergedResults, data.page);
             }
-            setSearchResultPage(data.page)
-        }
-        catch(error){
-            console.error(error)
-        }
-        finally{
-            isFetchingSearch.current = false
+            
+            setSearchResultPage(data.page);
+
+        } 
+        
+        catch (error) {
+            console.error(error);
+        } 
+        
+        finally {
+            isFetchingSearch.current = false;
         }
     };
 
-    // --- SEARCH EFFECT LOGIC FIX ---
+
     useEffect(() => {
         if (movieSearch.trim()) {
             search(1);
             setDisplaySearchResults(true);
-        } else {
+        } 
+        
+        else {
             setSearchResults([]);
             setDisplaySearchResults(false);
         }
+
     }, [movieSearch]);
+
 
     const lastMovieElementRef = useCallback(node => {
         if (movieObserver.current) movieObserver.current.disconnect();
@@ -111,6 +208,7 @@ function Home() {
             }
         }
     }, [cachedMovies, networkPage]);
+
 
     const lastSeriesElementRef = useCallback(node => {
         if (seriesObserver.current) seriesObserver.current.disconnect();
@@ -136,6 +234,7 @@ function Home() {
         }
     }, [cachedSeries, networkPage]);
 
+
     const searchResultPaginRef = useCallback(node =>{
         if (searchObserver.current) searchObserver.current.disconnect();
         searchObserver.current = new IntersectionObserver(entries => {
@@ -154,9 +253,11 @@ function Home() {
         }
     }, [searchResultPage])
 
+
     useEffect(() => { 
         fetchTrending(1, "initial"); 
     }, []);
+
 
     return (
         <div className={homeStyles.root}>
@@ -169,7 +270,7 @@ function Home() {
                             placeholder='Search Movies'
                             value={movieSearch}
                             onChange={(e) => setMovieSearch(e.target.value)}
-                            // --- FOCUS/BLUR LOGIC FIX ---
+
                             onFocus={() => {
                                 if (movieSearch.trim() !== "") {
                                     setDisplaySearchResults(true);
