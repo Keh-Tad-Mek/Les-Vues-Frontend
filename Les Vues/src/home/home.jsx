@@ -24,6 +24,21 @@ function Home() {
     const CACHE_TTL = 12 * 60 * 60 * 1000;
 
 
+    const cleanExpiredCache = () => {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const raw = localStorage.getItem(key);
+            try {
+                const entry = JSON.parse(raw);
+                if (entry.timestamp && Date.now() - entry.timestamp > CACHE_TTL) {
+                    localStorage.removeItem(key);
+                }
+            } catch (e) {
+                // Not a cache entry, skip
+            }
+        }
+    };
+
     const getCachedData = (key) => {
         const raw = localStorage.getItem(key);
         if (!raw) return null;
@@ -173,16 +188,19 @@ function Home() {
 
 
     useEffect(() => {
-        if (movieSearch.trim()) {
-            search(1);
-            setDisplaySearchResults(true);
-        } 
-        
-        else {
-            setSearchResults([]);
-            setDisplaySearchResults(false);
-        }
+        const timer = setTimeout(() => {
+            if (movieSearch.trim()) {
+                search(1);
+                setDisplaySearchResults(true);
+            } 
+            
+            else {
+                setSearchResults([]);
+                setDisplaySearchResults(false);
+            }
+        }, 1000)
 
+        return () => clearTimeout(timer)
     }, [movieSearch]);
 
 
@@ -255,6 +273,7 @@ function Home() {
 
 
     useEffect(() => { 
+        cleanExpiredCache()
         fetchTrending(1, "initial"); 
     }, []);
 
