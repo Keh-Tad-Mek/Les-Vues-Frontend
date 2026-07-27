@@ -37,41 +37,31 @@
     display: flex;
     align-items: center;
     border-radius: 20px;
+    padding: 0 10px;
+    flex-shrink: 0;
+    height: 45px;
 }
 
 .searchInput {
-    width: 85%;
-    padding: 10px;
+    width: 100%;
+    padding: 10px 0;
     border-radius: 20px;
     background-color: var(--sub-color);
     border: none;
     outline: none;
+    color: var(--opposite-color);
+    flex-shrink: 0;
     text-indent: 10px;
-    margin: 0;
-    color: var(--opposite-color);
+    height: 45px;
 }
 
-.searchField button{
-    color: var(--opposite-color);
-    border: none;
-    width: 15%;
-    border-top-right-radius: 20px;
-    border-bottom-right-radius: 20px;
-    padding: 10px;
-    background-color: rgb(41, 41, 41);
-    font-size: 16px;
-    margin: 0;
-    transition: 0.25s all ease;
-}
 
-.searchField button:hover{
-    color: var(--sub-opposite-color);
-}
-
-.searchField button
-
-.searchIcon{
+.searchIcon {
     font-size: 18px;
+    color: var(--opposite-color);
+    flex-shrink: 0;
+    margin-right: 8px;
+    margin-left: 8px;
 }
 
 .popularMovies {
