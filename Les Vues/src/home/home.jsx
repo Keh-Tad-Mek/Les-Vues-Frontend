@@ -25,12 +25,17 @@ function Home() {
     const isFetching = useRef(false);
     const isFetchingSearch = useRef(false);
 
-    // Tracks the current active query to prevent stale responses from altering state
+    // Active query reference and AbortController reference
     const activeSearchQueryRef = useRef("");
+    const abortControllerRef = useRef(null);
 
     const CACHE_TTL = 12 * 60 * 60 * 1000;
+    const STOP_WORDS = new Set([
+        'a', 'an', 'the', 'of', 'for', 'on', 'at', 'to', 'in',
+        'and', 'or', 'but', 'nor', 'so', 'for', 'yet'
+    ]);
 
-    // --- Cache Helper Functions (Format Unchanged) ---
+    // --- Cache Helpers ---
     const cleanExpiredCache = () => {
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -40,21 +45,16 @@ function Home() {
                 if (entry.timestamp && Date.now() - entry.timestamp > CACHE_TTL) {
                     localStorage.removeItem(key);
                 }
-            } catch (e) {
-                // Not a cache entry, skip
-            }
+            } catch (e) { }
         }
     };
 
     const getCachedData = (key) => {
         const raw = localStorage.getItem(key);
         if (!raw) return null;
-
         try {
             const entry = JSON.parse(raw);
-            const now = Date.now();
-
-            if (now - entry.timestamp > CACHE_TTL) {
+            if (Date.now() - entry.timestamp > CACHE_TTL) {
                 localStorage.removeItem(key);
                 return null;
             }
@@ -65,11 +65,7 @@ function Home() {
     };
 
     const setCachedData = (key, data, page) => {
-        const entry = {
-            data: data,
-            page: page,
-            timestamp: Date.now()
-        };
+        const entry = { data, page, timestamp: Date.now() };
         localStorage.setItem(key, JSON.stringify(entry));
     };
 
@@ -79,14 +75,8 @@ function Home() {
             setCachedData(key, newData, page);
             return;
         }
-
         const mergedData = filterUnique(existing.data, newData);
-        const entry = {
-            data: mergedData,
-            page: page,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(key, JSON.stringify(entry));
+        setCachedData(key, mergedData, page);
     };
 
     const filterUnique = (prevList = [], newList = []) => {
@@ -94,7 +84,7 @@ function Home() {
         return [...prevList, ...newList.filter(item => !existingIds.has(item.id))];
     };
 
-    // --- Fetch Trending Movies/Series ---
+    // --- Trending Fetch ---
     const fetchTrending = async (targetPage, trigger) => {
         if (isFetching.current) return;
         isFetching.current = true;
@@ -120,19 +110,16 @@ function Home() {
             if (trigger === "initial") {
                 setVisibleMovies(newMovies);
                 setVisibleSeries(newSeries);
-
                 setCachedData("trendingMovies", newMovies, data.page);
                 setCachedData("trendingSeries", newSeries, data.page);
             } else if (trigger === "movies") {
                 setVisibleMovies(prev => filterUnique(prev, newMovies));
                 setVisibleSeries(prev => filterUnique(prev, newSeries));
-
                 updateCachedData("trendingMovies", newMovies, data.page);
                 updateCachedData("trendingSeries", newSeries, data.page);
             } else if (trigger === "series") {
                 setVisibleSeries(prev => filterUnique(prev, newSeries));
                 setVisibleMovies(prev => filterUnique(prev, newMovies));
-
                 updateCachedData("trendingSeries", newSeries, data.page);
                 updateCachedData("trendingMovies", newMovies, data.page);
             }
@@ -144,50 +131,62 @@ function Home() {
         }
     };
 
-    // --- SEARCH ALGORITHM ---
+
+    const queryCleanUp = (query) => {
+        return query.toLowerCase().split(' ').filter(word => !STOP_WORDS.has(word)).join(' ')
+    }
+
+
     const search = async (query, pageToFetch) => {
-        const cleanQuery = query.trim();
+        const cleanQuery = query;
+        console.log(cleanQuery)
         if (!cleanQuery) return;
 
-        if (isFetchingSearch.current) return;
-        isFetchingSearch.current = true;
+        if (pageToFetch > 1 && isFetchingSearch.current) {
+            return;
+        }
 
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        isFetchingSearch.current = true;
         const cacheKey = cleanQuery.toLowerCase();
 
         try {
             const cached = getCachedData(cacheKey);
 
-            // If requested page is already satisfied by cached data
             if (cached && pageToFetch <= cached.page) {
                 if (activeSearchQueryRef.current === cleanQuery) {
                     setSearchResults(cached.data);
                     setSearchResultPage(cached.page);
-                    // Assume there are more pages beyond cache until the network API tells us otherwise
                     setSearchTotalPages(prev => Math.max(prev, cached.page + 1));
                 }
                 isFetchingSearch.current = false;
                 return;
             }
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/movies/search?query=${encodeURIComponent(cleanQuery)}&page=${pageToFetch}`);
+
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/movies/search?query=${encodeURIComponent(cleanQuery)}&page=${pageToFetch}`,
+                { signal: controller.signal }
+            );
             const data = await response.json();
 
-            // GUARD: Discard response if user changed input while request was in-flight
+
             if (activeSearchQueryRef.current !== cleanQuery) {
-                isFetchingSearch.current = false;
                 return;
             }
 
             const resultsArray = data.result || data.results || [];
-            
-            // Deduce total pages (fallback to allowing pageToFetch + 1 if results exist)
             const apiTotalPages = data.total_pages || data.totalPages || (resultsArray.length > 0 ? pageToFetch + 1 : pageToFetch);
             const apiPage = data.page || pageToFetch;
 
             if (resultsArray.length === 0) {
-                // Lock total pages to current page if no results are returned
                 setSearchTotalPages(searchResultPage > 0 ? searchResultPage : 1);
-                isFetchingSearch.current = false;
                 return;
             }
 
@@ -206,52 +205,33 @@ function Home() {
                 setSearchResultPage(apiPage);
             }
         } catch (error) {
-            console.error("Search error:", error);
+            if (error.name === 'AbortError') {
+                // Request was intentionally cancelled because a new search started
+                console.log(`Search for "${cleanQuery}" was aborted.`);
+            } else {
+                console.error("Search error:", error);
+            }
         } finally {
-            isFetchingSearch.current = false;
+            // ONLY release the lock if this controller was the last one created
+            if (abortControllerRef.current === controller) {
+                isFetchingSearch.current = false;
+            }
         }
     };
 
-    // --- 1-SECOND DEBOUNCE EFFECT ---
-    useEffect(() => {
-        const query = movieSearch.trim();
-
-        if (!query) {
-            activeSearchQueryRef.current = "";
-            setSearchResults([]);
-            setSearchResultPage(0);
-            setSearchTotalPages(1);
-            setDisplaySearchResults(false);
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            activeSearchQueryRef.current = query;
-
-            // Reset pagination state specifically for this search term
-            setSearchResultPage(0);
-            setSearchTotalPages(2); // Set to 2 initially so observer is unlocked for page 2
-
-            search(query, 1);
-            setDisplaySearchResults(true);
-        }, 1000);
-
-        return () => clearTimeout(timer);
-    }, [movieSearch]);
-
-    // --- SEARCH INTERSECTION OBSERVER (PAGINATION) ---
+    // --- SEARCH INTERSECTION OBSERVER ---
     const searchResultPaginRef = useCallback(node => {
         if (searchObserver.current) searchObserver.current.disconnect();
 
         searchObserver.current = new IntersectionObserver(entries => {
-            const currentQuery = movieSearch.trim();
+            const currentQuery = queryCleanUp(movieSearch.trim());
 
             if (
-                entries[0].isIntersecting && 
-                !isFetchingSearch.current && 
-                currentQuery && 
-                currentQuery === activeSearchQueryRef.current && 
-                searchResultPage > 0 && 
+                entries[0].isIntersecting &&
+                !isFetchingSearch.current &&
+                currentQuery &&
+                currentQuery === activeSearchQueryRef.current &&
+                searchResultPage > 0 &&
                 searchResultPage < searchTotalPages
             ) {
                 search(currentQuery, searchResultPage + 1);
@@ -266,7 +246,7 @@ function Home() {
         }
     }, [movieSearch, searchResultPage, searchTotalPages]);
 
-    // --- TRENDING OBSERVERS ---
+    
     const lastMovieElementRef = useCallback(node => {
         if (movieObserver.current) movieObserver.current.disconnect();
         movieObserver.current = new IntersectionObserver(entries => {
@@ -286,6 +266,7 @@ function Home() {
             movieObserver.current = null;
         }
     }, [cachedMovies, networkPage]);
+
 
     const lastSeriesElementRef = useCallback(node => {
         if (seriesObserver.current) seriesObserver.current.disconnect();
@@ -308,10 +289,40 @@ function Home() {
         }
     }, [cachedSeries, networkPage]);
 
-    useEffect(() => { 
+
+    useEffect(() => {
         cleanExpiredCache();
-        fetchTrending(1, "initial"); 
+        fetchTrending(1, "initial");
     }, []);
+
+
+    useEffect(() => {
+        const query = queryCleanUp(movieSearch.trim());
+
+        if (!query) {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            activeSearchQueryRef.current = "";
+            setSearchResults([]);
+            setSearchResultPage(0);
+            setSearchTotalPages(1);
+            setDisplaySearchResults(false);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            activeSearchQueryRef.current = query;
+            setSearchResultPage(0);
+            setSearchTotalPages(2);
+
+            search(query, 1);
+            setDisplaySearchResults(true);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [movieSearch]);
+
 
     return (
         <div className={homeStyles.root}>
@@ -319,9 +330,9 @@ function Home() {
                 <div className={homeStyles.searchWrapper}>
                     <div className={homeStyles.searchField}>
                         <FontAwesomeIcon className={homeStyles.searchIcon} icon={faMagnifyingGlass} />
-                        <input 
-                            type="text" 
-                            className={homeStyles.searchInput} 
+                        <input
+                            type="text"
+                            className={homeStyles.searchInput}
                             placeholder='Search Movies'
                             value={movieSearch}
                             onChange={(e) => setMovieSearch(e.target.value)}
@@ -331,7 +342,6 @@ function Home() {
                                 }
                             }}
                             onBlur={() => {
-                                // Short delay on blur so clicks/scrolls inside results don't close instantly
                                 setTimeout(() => setDisplaySearchResults(false), 200);
                             }}
                         />
@@ -340,11 +350,10 @@ function Home() {
                         <div className={homeStyles.searchResults}>
                             {searchResults.map(item => (
                                 <div key={item.id} className={homeStyles.searchResultItem}>
-                                    <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt={item.title || item.name}/>
+                                    <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt={item.title || item.name} />
                                     <span>{item.title || item.name}</span>
                                 </div>
                             ))}
-                            {/* Sentinel element triggering page + 1 */}
                             <div ref={searchResultPaginRef} style={{ height: '20px', width: '100%' }} />
                         </div>
                     )}
