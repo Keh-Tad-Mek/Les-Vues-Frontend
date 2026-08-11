@@ -31,7 +31,7 @@ function Signin() {
         password: password,
       }, {
         onSuccess: () => {
-            navigate("/home", { replace: true })
+            navigate("/", { replace: true })
         },
         onError: (ctx) => {
             if (ctx.error.status === 403 || ctx.error.message.includes("email_not_verified")) {
@@ -70,7 +70,7 @@ function Signin() {
     if (error) {
       setErrorMessage("Invalid Code")
     } else {
-      navigate("/home", { replace: true })
+      navigate("/", { replace: true })
     }
   }
 

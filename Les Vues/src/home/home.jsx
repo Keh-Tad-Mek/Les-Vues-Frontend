@@ -3,6 +3,8 @@ import homeStyles from './home.module.css';
 import MovieGrid from './movieGrid.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate } from 'react-router-dom';
+import { filterUnique, cleanExpiredCache, getCachedData, setCachedData, updateCachedData } from '../utils/cacheUtils.js';
 
 function Home() {
     const [visibleMovies, setVisibleMovies] = useState([]);
@@ -29,60 +31,12 @@ function Home() {
     const activeSearchQueryRef = useRef("");
     const abortControllerRef = useRef(null);
 
-    const CACHE_TTL = 12 * 60 * 60 * 1000;
     const STOP_WORDS = new Set([
         'a', 'an', 'the', 'of', 'for', 'on', 'at', 'to', 'in',
         'and', 'or', 'but', 'nor', 'so', 'for', 'yet'
     ]);
+    const navigate = useNavigate()
 
-    // --- Cache Helpers ---
-    const cleanExpiredCache = () => {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const raw = localStorage.getItem(key);
-            try {
-                const entry = JSON.parse(raw);
-                if (entry.timestamp && Date.now() - entry.timestamp > CACHE_TTL) {
-                    localStorage.removeItem(key);
-                }
-            } catch (e) { }
-        }
-    };
-
-    const getCachedData = (key) => {
-        const raw = localStorage.getItem(key);
-        if (!raw) return null;
-        try {
-            const entry = JSON.parse(raw);
-            if (Date.now() - entry.timestamp > CACHE_TTL) {
-                localStorage.removeItem(key);
-                return null;
-            }
-            return entry;
-        } catch (e) {
-            return null;
-        }
-    };
-
-    const setCachedData = (key, data, page) => {
-        const entry = { data, page, timestamp: Date.now() };
-        localStorage.setItem(key, JSON.stringify(entry));
-    };
-
-    const updateCachedData = (key, newData, page) => {
-        const existing = getCachedData(key);
-        if (!existing) {
-            setCachedData(key, newData, page);
-            return;
-        }
-        const mergedData = filterUnique(existing.data, newData);
-        setCachedData(key, mergedData, page);
-    };
-
-    const filterUnique = (prevList = [], newList = []) => {
-        const existingIds = new Set(prevList.map(item => item.id));
-        return [...prevList, ...newList.filter(item => !existingIds.has(item.id))];
-    };
 
     // --- Trending Fetch ---
     const fetchTrending = async (targetPage, trigger) => {
@@ -139,7 +93,6 @@ function Home() {
 
     const search = async (query, pageToFetch) => {
         const cleanQuery = query;
-        console.log(cleanQuery)
         if (!cleanQuery) return;
 
         if (pageToFetch > 1 && isFetchingSearch.current) {
@@ -349,7 +302,14 @@ function Home() {
                     {displaySearchResults && searchResults.length > 0 && (
                         <div className={homeStyles.searchResults}>
                             {searchResults.map(item => (
-                                <div key={item.id} className={homeStyles.searchResultItem}>
+                                <div key={item.id} className={homeStyles.searchResultItem}
+                                    onMouseDown={() => {
+                                        const title = item.title || item.name
+                                        const key = `${title}_${item.id}`
+                                        setCachedData(key, item)
+                                        navigate(`/movies/${key}`)
+                                    }}
+                                >
                                     <img src={`https://image.tmdb.org/t/p/w92${item.poster_path}`} alt={item.title || item.name} />
                                     <span>{item.title || item.name}</span>
                                 </div>

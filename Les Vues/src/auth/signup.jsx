@@ -84,7 +84,7 @@ function Signup() {
       console.error("Verification failed:", error.message)
       alert("Invalid Code")
     } else {
-      navigate("/home", { replace: true })
+      navigate("/", { replace: true })
     }
   }
 
