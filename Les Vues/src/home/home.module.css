@@ -40,6 +40,7 @@
     padding: 0 10px;
     flex-shrink: 0;
     height: 45px;
+    width: 100%;
 }
 
 .searchInput {
