@@ -33,7 +33,7 @@ function Movies() {
 
     const id = movieData.data.id 
     const overview = movieData.data.overview 
-    const title = movieData.data.title 
+    const title = movieData.data.title || movieData.data.name
     const media = movieData.data.media_type
     const backdropPath = movieData.data.backdrop_path
 
@@ -75,7 +75,7 @@ function Movies() {
         setExpandedDropdown(seasonNumber);
 
         if (!seasonsData[seasonNumber]) {
-            fetch(`/api/movies/get_series_info?id=${id}&seasonNumber=${seasonNumber}`)
+            fetch(`${import.meta.env.VITE_API_URL}/api/movies/get_series_info?id=${id}&seasonNumber=${seasonNumber}`)
                 .then(async res => {
                     const data = await res.json();
                     if (!res.ok) {
@@ -197,6 +197,9 @@ function Movies() {
 
                 <div className={movieStyles.infoSection}>
                     <h1 className={movieStyles.mediaTitle}>{title}</h1>
+                    <div className="genre-list">
+                        <div className="individual-genre"></div>
+                    </div>
                     <p className={movieStyles.overview}>{overview}</p>
                 </div>
             </div>
