@@ -24,7 +24,33 @@
     box-sizing: border-box;
 }
 
-.header {
+header {
+    padding: 10px;
+    font-family: monospace;
+    width: 100%;
+    font-size: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header .Nav {
+    display: flex;
+    justify-content: space-between;
+}
+
+header .Nav nav a {
+    text-decoration: none;
+    color: white;
+    transition: 0.15s ease;
+}
+
+header .Nav nav a:hover {
+    color: #0ea5e9;
+}
+
+
+.search {
     padding: 20px;
     width: 100%;
     display: flex; /* Added so searchField aligns nicely inside header */
@@ -78,8 +104,9 @@
 }
 
 .movieCard {
+    position: relative;
     flex-shrink: 0;
-    width: 150px;
+    width: 180px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -165,4 +192,165 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.rating {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    -ms-flex-item-align: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding-left: 7px;
+    padding-right: 7px;
+    border-radius: 5px;
+    backdrop-filter: blur(10px);
+    max-height: 26px;
+}
+
+.moviecardheader {
+    justify-content: space-between;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 10px;
+}
+
+.cardOptions {
+    flex-direction: column;
+    position: absolute;
+    top: 40px;
+    left: 16px;
+    background-color: var(--sub-color);
+}
+
+.cardButtons {
+    font-family: monospace;
+    margin: 0;
+    background-color: var(--body-background);
+    color: white;
+    padding: 6px;
+    border: 1px solid rgb(61, 61, 61);
+    border-left: none;
+    border-right: none;
+    border-top: none
+
+}
+
+.cardButtons:hover {
+    background-color: var(--sub-color);
+}
+
+.profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative
+}
+
+.profileButton {
+    margin-right: 20px;
+    font-size: 20px;
+    border: none;
+    border-radius: 30px;
+    padding: 5px;
+}
+
+.profileOptions {
+    position: absolute;
+    padding: 6px;
+    top: 45px;
+    right: 20px;
+    min-width: 160px;
+    width: max-content;
+    border-radius: 5px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 14px;
+    background-color: black;
+    border-radius: 8px;
+}
+
+.profileName {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.profileName input {
+    background-color: black;
+    border: none;
+    color: white;
+}
+
+.profileName button {
+    background-color: transparent;
+    border: none;
+    color: white;
+}
+
+.profileName button:hover {
+    color: #0ea5e9;
+}
+
+.profileEmail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.profileEmail button {
+    border: none;
+    background-color: transparent;
+    color: white;
+}
+
+.logoutButton {
+    border: none;
+    background-color: transparent;
+    color: white;
+    transition: 0.15s ease;
+}
+
+.logoutButton:hover {
+    color: red;
+}
+
+.loggedOut {
+    display: flex;
+    flex-direction: column;
+}
+
+.loggedOut a { 
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 18px;
+    text-decoration: none;
+    color: white;
+    transition: 0.15s ease
+}
+
+.loggedOut a:hover {
+    color: #0ea5e9;
+}
+
+.dialogueBox {
+    position: fixed;
+    z-index: 1000;
+    top: 45%;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    backdrop-filter: blur(4px);
 }

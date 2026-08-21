@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getCachedData } from "../utils/cacheUtils";
+import { getCachedData, setCachedData } from "../utils/cacheUtils";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart } from "@fortawesome/free-regular-svg-icons";
+import { faBookmark } from "@fortawesome/free-regular-svg-icons";
 import movieStyles from "./movies.module.css";
 
 const PROVIDERS = {
@@ -31,8 +34,9 @@ function Movies() {
 
     if (!movieData) return
 
-    const id = movieData.data.id 
-    const overview = movieData.data.overview 
+    const id = movieData.data.movie_id || movieData.data.id
+    console.log(id)
+    const overview = movieData.data.overview
     const title = movieData.data.title || movieData.data.name
     const media = movieData.data.media_type
     const backdropPath = movieData.data.backdrop_path
@@ -42,14 +46,23 @@ function Movies() {
     const [provider, setProvider] = useState("vidsrc.mov");
     const [activeSeason, setActiveSeason] = useState(1);
     const [activeEpisode, setActiveEpisode] = useState(1);
-    const [expandedDropdown, setExpandedDropdown] = useState(null); 
+    const [expandedDropdown, setExpandedDropdown] = useState(null);
 
     const [seriesInfo, setSeriesInfo] = useState(null);
     const [seasonsData, setSeasonsData] = useState({});
 
+    const [favoriteHeartColor, setFavoriteHeartColor] = useState('null')
+    const [saveButtonColor, setSaveButtonColor] = useState('null')
+
     // Fetch series info on mount
     useEffect(() => {
         if (isTv && id) {
+            const cachedSeries = getCachedData(id);
+            if (cachedSeries && cachedSeries.data) {
+                setSeriesInfo(cachedSeries.data);
+                return;
+            }
+
             fetch(`${import.meta.env.VITE_API_URL}/api/movies/get_series_info?id=${id}`)
                 .then(async res => {
                     const data = await res.json();
@@ -58,7 +71,10 @@ function Movies() {
                     }
                     return data;
                 })
-                .then(data => setSeriesInfo(data))
+                .then(data => {
+                    setCachedData(id, data); 
+                    setSeriesInfo(data);
+                })
                 .catch(err => {
                     console.error("Error fetching series info:", err.message);
                     setSeriesInfo({ error: true });
@@ -75,6 +91,17 @@ function Movies() {
         setExpandedDropdown(seasonNumber);
 
         if (!seasonsData[seasonNumber]) {
+            const seasonCacheKey = `${id}_${seasonNumber}`;
+            const cachedSeason = getCachedData(seasonCacheKey);
+
+            if (cachedSeason && cachedSeason.data) {
+                setSeasonsData(prev => ({
+                    ...prev,
+                    [seasonNumber]: cachedSeason.data.episodes || []
+                }));
+                return;
+            }
+
             fetch(`${import.meta.env.VITE_API_URL}/api/movies/get_series_info?id=${id}&seasonNumber=${seasonNumber}`)
                 .then(async res => {
                     const data = await res.json();
@@ -84,6 +111,7 @@ function Movies() {
                     return data;
                 })
                 .then(data => {
+                    setCachedData(seasonCacheKey, data); 
                     setSeasonsData(prev => ({
                         ...prev,
                         [seasonNumber]: data.episodes || []
@@ -109,7 +137,7 @@ function Movies() {
     }
 
     const embedUrl = !isTv
-        ? PROVIDERS[provider].movie(id) 
+        ? PROVIDERS[provider].movie(id)
         : PROVIDERS[provider].tv(id, activeSeason, activeEpisode);
 
     const bgImageUrl = backdropPath ? `https://image.tmdb.org/t/p/w1280${backdropPath}` : null;
@@ -117,9 +145,9 @@ function Movies() {
     return (
         <div className={movieStyles.pageWrapper}>
             {bgImageUrl && (
-                <div 
-                    className={movieStyles.bgOverlay} 
-                    style={{ backgroundImage: `url(${bgImageUrl})` }} 
+                <div
+                    className={movieStyles.bgOverlay}
+                    style={{ backgroundImage: `url(${bgImageUrl})` }}
                 />
             )}
 
@@ -151,7 +179,7 @@ function Movies() {
                 {isTv && (
                     <div className={movieStyles.seasonsSection}>
                         <h3 className={movieStyles.seasonsTitle}>Seasons</h3>
-                        
+
                         {!seriesInfo ? (
                             <div className={movieStyles.loadingText}>Loading series info...</div>
                         ) : seriesInfo.error ? (

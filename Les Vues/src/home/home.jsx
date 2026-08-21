@@ -2,9 +2,15 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import homeStyles from './home.module.css';
 import MovieGrid from './movieGrid.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
-import { useNavigate } from 'react-router-dom';
+import { faEnvelope, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
+import { faPen } from '@fortawesome/free-solid-svg-icons';
+import { faDoorOpen } from '@fortawesome/free-solid-svg-icons';
+import { Link, useNavigate } from 'react-router-dom';
 import { filterUnique, cleanExpiredCache, getCachedData, setCachedData, updateCachedData } from '../utils/cacheUtils.js';
+import { useAuth } from '../lib/useAuth.jsx';
+import Loading from '../utils/loading.jsx'
+import { authClient } from "../lib/auth-client.jsx";
 
 function Home() {
     const [visibleMovies, setVisibleMovies] = useState([]);
@@ -19,6 +25,10 @@ function Home() {
     const [searchResultPage, setSearchResultPage] = useState(0);
     const [searchTotalPages, setSearchTotalPages] = useState(1);
     const [displaySearchResults, setDisplaySearchResults] = useState(false);
+
+    // --- Profile Related states ---
+    const [displayProfileOptions, setDisplayProfileOptions] = useState("none")
+    const [displayDialogueBox, setDisplayDialogueBox] = useState('none')
 
     // --- Observers & Refs ---
     const movieObserver = useRef();
@@ -36,9 +46,29 @@ function Home() {
         'and', 'or', 'but', 'nor', 'so', 'for', 'yet'
     ]);
     const navigate = useNavigate()
+    const { isAuthenticated, isPending, user } = useAuth()
 
 
-    // --- Trending Fetch ---
+    const handleLogout = async () => {
+        try {
+            const response = await authClient.signOut();
+
+            if (response?.error) {
+                console.error("Logout failed.")
+
+                return
+            }
+
+            setDisplayDialogueBox('none')
+        } catch (error) {
+            console.error("Error during log out.")
+        }
+    }
+
+    const toggleProfileOptions = () => {
+        setDisplayProfileOptions(prev => prev === "none" ? "flex" : "none");
+    };
+
     const fetchTrending = async (targetPage, trigger) => {
         if (isFetching.current) return;
         isFetching.current = true;
@@ -199,7 +229,7 @@ function Home() {
         }
     }, [movieSearch, searchResultPage, searchTotalPages]);
 
-    
+
     const lastMovieElementRef = useCallback(node => {
         if (movieObserver.current) movieObserver.current.disconnect();
         movieObserver.current = new IntersectionObserver(entries => {
@@ -279,10 +309,88 @@ function Home() {
 
     return (
         <div className={homeStyles.root}>
-            <header className={homeStyles.header}>
+            <header>
+                <h1
+                    style={{
+                        color: 'white',
+                        marginLeft: '20px'
+                    }}
+                >LesVues</h1>
+                <div className={homeStyles.Nav}>
+                    <nav>
+                        <Link to="/">Home</Link>
+                    </nav>
+                    <nav
+                        style={{
+                            marginLeft: '40px',
+                            marginRight: '40px'
+                        }}
+                    >
+                        <Link to="/savedMovies">Saved Movies</Link>
+                    </nav>
+                    <nav>
+                        <Link to="/favorites">Favorites</Link>
+                    </nav>
+                </div>
+                <div className={homeStyles.profile}>
+                    <button className={homeStyles.profileButton}
+                        onClick={toggleProfileOptions}
+                    >
+                        <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
+                    </button>
+                    <div className={homeStyles.profileOptions}
+                        style={{
+                            display: `${displayProfileOptions}`
+                        }}
+                    >
+                        {isPending ? (
+                            <Loading />
+                        ) : isAuthenticated ? (
+                            <div>
+                                <div className={homeStyles.profileName}>
+                                    <input
+                                        type="text"
+                                        value={user.name}
+                                        disabled="true"
+                                    />
+                                    <button>
+                                        <FontAwesomeIcon icon={faPen}></FontAwesomeIcon>
+                                    </button>
+                                </div>
+                                <div className={homeStyles.profileEmail}>
+                                    <p
+                                        style={{
+                                            marginRight: '6px'
+                                        }}
+                                    >{user.email}</p>
+                                    <button disabled="true">
+                                        <FontAwesomeIcon icon={faEnvelope}></FontAwesomeIcon>
+                                    </button>
+                                </div>
+                                <button className={homeStyles.logoutButton}
+                                    onClick={() => setDisplayDialogueBox("block")}
+                                >
+                                    Log Out
+                                    <FontAwesomeIcon icon={faDoorOpen}
+                                        style={{
+                                            marginLeft: '10px'
+                                        }}
+                                    ></FontAwesomeIcon>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className={homeStyles.loggedOut}>
+                                <Link to="/signup">Sign Up</Link>
+                                <Link to="/signin">Sign In</Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+            </header>
+            <div className={homeStyles.search}>
                 <div className={homeStyles.searchWrapper}>
                     <div className={homeStyles.searchField}>
-                        <FontAwesomeIcon className={homeStyles.searchIcon} icon={faMagnifyingGlass} />
                         <input
                             type="text"
                             className={homeStyles.searchInput}
@@ -318,17 +426,80 @@ function Home() {
                         </div>
                     )}
                 </div>
-            </header>
+            </div>
 
             <div className={homeStyles.trendingHeader}>
                 <div className={homeStyles.popularMovies}>
                     <MovieGrid title="Trending Movies" items={visibleMovies} />
                     <div ref={lastMovieElementRef} style={{ height: '20px' }} />
                 </div>
+
                 <div className={homeStyles.popularMovies}>
                     <MovieGrid title="Popular TV Series" items={visibleSeries} />
                     <div ref={lastSeriesElementRef} style={{ height: '20px' }} />
                 </div>
+            </div>
+            {displayDialogueBox === "block" && (
+                <div
+                    className={homeStyles.overlay}
+                    onClick={() => setDisplayDialogueBox('none')}
+                />
+            )}
+            <div className={homeStyles.dialogueBox}
+                style={{
+                    width: 'max-content',
+                    padding: '20px',
+                    backgroundColor: 'hsl(0, 0%, 17%)',
+                    border: '1px solid #494949',
+                    borderRadius: '6px',
+                    display: `${displayDialogueBox}`
+                }}
+            >
+
+                <div>
+                    <p
+                        style={{
+                            fontSize: '20px',
+                            color: 'white',
+                            fontFamily: 'monospace',
+                        }}
+                    >Are you sure you want to log out</p>
+                    <div className={homeStyles.dialogueBoxOptions}
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                        }}
+                    >
+                        <button
+                            style={{
+                                padding: '10px',
+                                width: '90px',
+                                border: 'none',
+                                borderRadius: '20px',
+                                backgroundColor: '#ff4040',
+                                color: 'white'
+                            }}
+
+                            onClick={handleLogout}
+                        >Yes</button>
+                        <button
+                            style={{
+                                padding: '10px',
+                                width: '90px',
+                                border: '1px solid #666666',
+                                borderRadius: '20px',
+                                marginLeft: '10px',
+                                backgroundColor: '#505050',
+                                color: 'white'
+                            }}
+
+                            onClick={() => {
+                                setDisplayDialogueBox('none')
+                            }}
+                        >No</button>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
