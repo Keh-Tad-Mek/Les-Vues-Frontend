@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import favoriteStyles from './favorites.module.css';
 import { authClient } from "../lib/auth-client.jsx";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faUser, faDoorOpen, faEnvelope, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faUser, faDoorOpen, faEnvelope, faPen, faHouse, faBookmark, faHeart } from '@fortawesome/free-solid-svg-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth.jsx';
 import Loading from '../utils/loading.jsx';
@@ -36,7 +36,6 @@ function Favorites() {
                 console.error("Logout failed.");
                 return;
             }
-            // Clear sensitive lists and stale flags from cache on logout
             localStorage.removeItem('saved_movies_list');
             localStorage.removeItem('saved_movies_list_stale');
             localStorage.removeItem(CACHE_KEY);
@@ -55,11 +54,9 @@ function Favorites() {
         if (isFetching.current || !hasMore) return;
         isFetching.current = true;
 
-        // --- CACHE & STALE CHECK ---
         const isStale = localStorage.getItem(STALE_KEY);
         const cached = getCachedData(CACHE_KEY);
         
-        // Only use cache if it exists, the page is within range, AND no changes have been made to the DB
         if (cached && !isStale && targetPage <= cached.page) {
             if (targetPage === 1) {
                 setFavoriteMovies(cached.data);
@@ -105,14 +102,12 @@ function Favorites() {
                 uniqueNew.forEach(m => existingIds.current.add(m.movie_id || m.id));
                 
                 setFavoriteMovies(prev => {
-                    // If we are fetching page 1 because it was stale, overwrite instead of appending
                     const updatedMovies = (targetPage === 1 && isStale) 
                         ? [...uniqueNew] 
                         : [...prev, ...uniqueNew];
                         
-                    // --- UPDATE CACHE & REMOVE STALE FLAG ---
                     setCachedData(CACHE_KEY, updatedMovies, targetPage);
-                    localStorage.removeItem(STALE_KEY); // Cache is now up to date with DB
+                    localStorage.removeItem(STALE_KEY); 
 
                     return updatedMovies;
                 });
@@ -134,8 +129,6 @@ function Favorites() {
     const removeFavorite = async (movieId, e) => {
         e.stopPropagation();
         
-        // --- MARK CACHE AS STALE ---
-        // Tells the system the DB has changed so the next reload fetches fresh
         localStorage.setItem(STALE_KEY, Date.now().toString());
         
         const previousFavorites = [...favoriteMovies];
@@ -143,7 +136,7 @@ function Favorites() {
         
         setFavoriteMovies(updatedFavorites);
         existingIds.current.delete(movieId);
-        setCachedData(CACHE_KEY, updatedFavorites, page); // Optimistic UI update
+        setCachedData(CACHE_KEY, updatedFavorites, page);
 
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/personal/favorites/${movieId}`, {
@@ -155,7 +148,6 @@ function Favorites() {
                 throw new Error("Deletion failed");
             }
         } catch (error) {
-            // Rollback if DB fails
             setFavoriteMovies(previousFavorites);
             existingIds.current.add(movieId);
             setCachedData(CACHE_KEY, previousFavorites, page);
@@ -187,41 +179,54 @@ function Favorites() {
         <div className={favoriteStyles.root}>
             <header>
                 <h1 style={{ color: 'white', marginLeft: '20px' }}>LesVues</h1>
-                <div className={favoriteStyles.Nav}>
-                    <nav><Link to="/">Home</Link></nav>
-                    <nav style={{ marginLeft: '40px', marginRight: '40px' }}>
-                        <Link to="/savedMovies">Saved Movies</Link>
-                    </nav>
-                    <nav><Link to="/favorites">Favorites</Link></nav>
-                </div>
-                <div className={favoriteStyles.profile}>
-                    <button className={favoriteStyles.profileButton} onClick={toggleProfileOptions}>
-                        <FontAwesomeIcon icon={faUser} />
-                    </button>
-                    <div className={favoriteStyles.profileOptions} style={{ display: `${displayProfileOptions}` }}>
-                        {isPending ? (
-                            <Loading />
-                        ) : isAuthenticated ? (
-                            <div>
-                                <div className={favoriteStyles.profileName}>
-                                    <input type="text" value={user?.name || ''} disabled={true} />
-                                    <button><FontAwesomeIcon icon={faPen} /></button>
+                
+                <div className={favoriteStyles.actionContainer}>
+                    <div className={favoriteStyles.Nav}>
+                        <nav>
+                            <Link to="/">
+                                <span className={favoriteStyles.navText}>Home</span>
+                                <FontAwesomeIcon icon={faHouse} className={favoriteStyles.navIcon} />
+                            </Link>
+                        </nav>
+                        <nav>
+                            <Link to="/savedMovies">
+                                <span className={favoriteStyles.navText}>Saved Movies</span>
+                                <FontAwesomeIcon icon={faBookmark} className={favoriteStyles.navIcon} />
+                            </Link>
+                        </nav>
+                        <nav>
+                            <Link to="/favorites">
+                                <span className={favoriteStyles.navText}>Favorites</span>
+                                <FontAwesomeIcon icon={faHeart} className={favoriteStyles.navIcon} />
+                            </Link>
+                        </nav>
+                    </div>
+
+                    <div className={favoriteStyles.profile}>
+                        <button className={favoriteStyles.profileButton} onClick={toggleProfileOptions}>
+                            <FontAwesomeIcon icon={faUser} />
+                        </button>
+                        <div className={favoriteStyles.profileOptions} style={{ display: `${displayProfileOptions}` }}>
+                            {isPending ? (
+                                <Loading />
+                            ) : isAuthenticated ? (
+                                <div>
+                                    <div className={favoriteStyles.profileEmail}>
+                                        <p style={{ marginRight: '6px' }}>{user?.email}</p>
+                                        <button disabled={true}><FontAwesomeIcon icon={faEnvelope} /></button>
+                                    </div>
+                                    <button className={favoriteStyles.logoutButton} onClick={() => setDisplayDialogueBox("block")}>
+                                        Log Out
+                                        <FontAwesomeIcon icon={faDoorOpen} style={{ marginLeft: '10px' }} />
+                                    </button>
                                 </div>
-                                <div className={favoriteStyles.profileEmail}>
-                                    <p style={{ marginRight: '6px' }}>{user?.email}</p>
-                                    <button disabled={true}><FontAwesomeIcon icon={faEnvelope} /></button>
+                            ) : (
+                                <div className={favoriteStyles.loggedOut}>
+                                    <Link to="/signup">Sign Up</Link>
+                                    <Link to="/signin">Sign In</Link>
                                 </div>
-                                <button className={favoriteStyles.logoutButton} onClick={() => setDisplayDialogueBox("block")}>
-                                    Log Out
-                                    <FontAwesomeIcon icon={faDoorOpen} style={{ marginLeft: '10px' }} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className={favoriteStyles.loggedOut}>
-                                <Link to="/signup">Sign Up</Link>
-                                <Link to="/signin">Sign In</Link>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </header>
@@ -251,11 +256,9 @@ function Favorites() {
                                     onClick={() => {
                                         const movieTitle = item.title || item.name;
                                         const key = `${movieTitle}_${item.movie_id}`;
-                                        console.log(item.movie_id)
                                         setCachedData(key, item);
                                         navigate(`/movies/${key}`);
                                     }}
-                                        
                                 >
                                     <div className={favoriteStyles.moviecardheader}
                                         style={{ 

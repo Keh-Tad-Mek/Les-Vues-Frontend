@@ -2,54 +2,85 @@ import { Link } from 'react-router-dom'
 import authStyles from './AuthForm.module.css' // Import the new module
 
 export default function AuthForm({
-  onSubmit, 
-  emailValue, 
+  onSubmit,
+  emailValue,
   onEmailChange,
   emailBorderColor,
   displayOTPField = "none",
-  emailOutline = "initial", 
-  onEmailFocus, 
-  passwordValue, 
+  emailOutline = "initial",
+  onEmailFocus,
+  passwordValue,
   onPasswordChange,
-  passwordBorderColor, 
-  onPasswordFocus, 
-  onPasswordBlur, 
+  passwordBorderColor,
+  onPasswordFocus,
+  onPasswordBlur,
   showStrengthMeter = false,
-  strengthVisibility = "none", 
+  strengthVisibility = "none",
   hue = 0,
-  verbalStrengthValue = "", 
+  verbalStrengthValue = "",
   strengthValue = 0,
-  footerText, 
+  footerText,
   footerLinkText,
-  footerLinkTo, 
-  submitButtonText, 
-  otpValue, 
+  footerLinkTo,
+  submitButtonText,
+  otpValue,
   onOtpChange,
-  onVerifyOtp, 
-  onCloseOtp, 
-  children
+  onVerifyOtp,
+  onCloseOtp,
+  children,
+  onResendOtp,
+  canResend,
+  resendTimer
 }) {
   return (
     <div>
       {/* OTP Popup Overlay */}
-      <div className={authStyles.otpPopup} style={{ display: displayOTPField }}>
+      <div className={authStyles.otpPopup}
+        style={{ display: displayOTPField }}
+      >
         <div className={authStyles.otpContent} style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '10px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            marginBottom: '30px'
+          }}>
             <div style={{ width: '24px' }}></div>
-            <h2 style={{ color: 'var(--header-color)', margin: 0, flex: 1, textAlign: 'center' }}>Verify Email</h2>
+            <h1 style={{
+              color: 'var(--header-color)',
+              margin: 0, flex: 1,
+              textAlign: 'center',
+              fontFamily: 'monospace'
+            }}>Check your Email</h1>
             <button type="button" onClick={onCloseOtp} style={{ background: 'none', border: 'none', fontSize: '32px', cursor: 'pointer', color: 'var(--header-color)', lineHeight: '1', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px' }}>&times;</button>
           </div>
-          <p style={{ margin: '0 0 20px 0' }}>We sent a code to {emailValue}</p>
+          <p style={{
+            margin: '0 0 20px 0',
+            color: 'white',
+            fontFamily: 'monospace',
+            marginBottom:'30px'
+          }}>If you have sent a valid email and it is not already registered we will send an OTP. Make sure to check your spam folder if you don't see it</p>
           <input
             type="text"
             placeholder='Enter 6-digit code'
             value={otpValue}
             onChange={(e) => onOtpChange(e.target.value)}
-            className={authStyles.inputField} 
+            className={authStyles.inputField}
             maxLength={6}
           />
           <button type="button" className={authStyles.submitBtn} onClick={onVerifyOtp}>
             Verify & Sign up
+          </button>
+          <button 
+            className={authStyles.resendOTP}
+            onClick={onResendOtp}
+            disabled={!canResend}
+          >
+            {canResend
+              ? "Resend OTP"
+              : `Resend in ${resendTimer}`
+            }
           </button>
         </div>
       </div>

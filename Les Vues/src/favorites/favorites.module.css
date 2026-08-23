@@ -32,9 +32,19 @@ header {
     align-items: center;
 }
 
+/* --- FULL SCREEN STYLES (Exactly as you originally had them) --- */
+.actionContainer {
+    display: contents; 
+}
+
 header .Nav {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+}
+
+header .Nav nav {
+    margin-left: 40px;
+    margin-right: 40px;
 }
 
 header .Nav nav a {
@@ -46,6 +56,15 @@ header .Nav nav a {
 header .Nav nav a:hover {
     color: #0ea5e9;
 }
+
+.navIcon {
+    display: none;
+}
+
+.navText {
+    display: inline;
+}
+/* -------------------------------------------------- */
 
 .favoritesContainer {
     width: 100%;
@@ -147,6 +166,8 @@ header .Nav nav a:hover {
     border-radius: 30px;
     padding: 5px;
     cursor: pointer;
+    background: transparent;
+    color: white;
 }
 
 .profileOptions {
@@ -157,6 +178,7 @@ header .Nav nav a:hover {
     min-width: 160px;
     width: max-content;
     border-radius: 8px;
+    display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
@@ -269,4 +291,111 @@ header .Nav nav a:hover {
 .authLink:hover {
     color: #33c4ff;
     text-decoration: underline;
+}
+
+
+/* ========================================= */
+/*          RESPONSIVE MEDIA QUERIES         */
+/* ========================================= */
+
+/* Half PC Screen / Tablet (approx 601px to 1024px) */
+@media screen and (max-width: 1024px) {
+    .root {
+        /* Increased padding so content doesn't hide behind the raised dock */
+        padding-bottom: 110px; 
+    }
+
+    /* actionContainer becomes the fixed floating dock */
+    .actionContainer {
+        display: flex;
+        position: fixed;
+        bottom: 25px; 
+        left: 20px; 
+        width: calc(100vw - 40px);
+        height: 60px;
+        background-color: var(--sub-color);
+        border: 1px solid rgba(255, 255, 255, 0.1); 
+        border-radius: 16px;
+        justify-content: space-around;
+        align-items: center;
+        gap: 0;
+        z-index: 900;
+        /* Margin handles safe-area lifting on iPhones */
+        margin-bottom: env(safe-area-inset-bottom, 0px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* Adds visual floating depth */
+    }
+
+    /* Unwraps the nav container so the items join the bottom flex bar */
+    header .Nav {
+        display: contents;
+    }
+
+    header .Nav nav {
+        margin: 0;
+    }
+
+    .navText { 
+        display: none; 
+    }
+    
+    .navIcon { 
+        display: inline-block; 
+        color: white; 
+        font-size: 22px;
+        transition: color 0.15s ease;
+    }
+    
+    header .Nav nav a:hover .navIcon {
+        color: #0ea5e9;
+    }
+
+    .profileButton {
+        margin-right: 0; 
+        font-size: 22px; /* scale profile icon to match nav icons */
+    }
+
+    /* Profile dropdown positioned above the bottom bar */
+    .profileOptions {
+        position: fixed;
+        top: auto;
+        bottom: 95px; /* Lifted higher to clear the floating dock */
+        right: 15px;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+        z-index: 1000;
+    }
+
+    .movieGrid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 16px;
+    }
+
+    .movieCard h3 {
+        font-size: 12px;
+    }
+}
+
+/* Mobile Phones (600px and below) */
+@media screen and (max-width: 600px) {
+    header h1 {
+        font-size: 22px;
+    }
+
+    .favoritesContainer {
+        padding: 15px 16px;
+    }
+
+    .movieGrid {
+        grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+        gap: 12px;
+    }
+
+    .movieCard h3 {
+        font-size: 11px;
+    }
+
+    .removeButton {
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+    }
 }

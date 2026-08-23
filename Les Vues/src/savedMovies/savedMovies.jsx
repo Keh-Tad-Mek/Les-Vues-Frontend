@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import styles from './savedMovies.module.css';
 import { authClient } from "../lib/auth-client.jsx";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faUser, faDoorOpen, faEnvelope, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faUser, faDoorOpen, faEnvelope, faPen, faHouse, faBookmark, faHeart } from '@fortawesome/free-solid-svg-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth.jsx';
 import Loading from '../utils/loading.jsx';
@@ -131,11 +131,10 @@ function SavedMovies() {
         }
     };
 
-    const removeSavedMovie = async (movieId, e) => {
+    const removeSavedMovie = async (movieId, title, e) => {
         e.stopPropagation();
         
         // --- MARK CACHE AS STALE ---
-        // Tells the system the DB has changed so the next reload fetches fresh
         localStorage.setItem(STALE_KEY, Date.now().toString());
 
         const previousMovies = [...savedMovies];
@@ -160,6 +159,7 @@ function SavedMovies() {
             existingIds.current.add(movieId);
             setCachedData(CACHE_KEY, previousMovies, page);
         }
+
     };
 
     const lastElementRef = useCallback(node => {
@@ -187,41 +187,54 @@ function SavedMovies() {
         <div className={styles.root}>
             <header>
                 <h1 style={{ color: 'white', marginLeft: '20px' }}>LesVues</h1>
-                <div className={styles.Nav}>
-                    <nav><Link to="/">Home</Link></nav>
-                    <nav style={{ marginLeft: '40px', marginRight: '40px' }}>
-                        <Link to="/savedMovies">Saved Movies</Link>
-                    </nav>
-                    <nav><Link to="/favorites">Favorites</Link></nav>
-                </div>
-                <div className={styles.profile}>
-                    <button className={styles.profileButton} onClick={toggleProfileOptions}>
-                        <FontAwesomeIcon icon={faUser} />
-                    </button>
-                    <div className={styles.profileOptions} style={{ display: `${displayProfileOptions}` }}>
-                        {isPending ? (
-                            <Loading />
-                        ) : isAuthenticated ? (
-                            <div>
-                                <div className={styles.profileName}>
-                                    <input type="text" value={user?.name || ''} disabled={true} />
-                                    <button><FontAwesomeIcon icon={faPen} /></button>
+                
+                {/* Wrapped Nav and Profile inside actionContainer for responsive handling */}
+                <div className={styles.actionContainer}>
+                    <div className={styles.Nav}>
+                        <nav>
+                            <Link to="/">
+                                <FontAwesomeIcon icon={faHouse} className={styles.navIcon} />
+                                <span className={styles.navText}>Home</span>
+                            </Link>
+                        </nav>
+                        <nav>
+                            <Link to="/savedMovies">
+                                <FontAwesomeIcon icon={faBookmark} className={styles.navIcon} />
+                                <span className={styles.navText}>Saved Movies</span>
+                            </Link>
+                        </nav>
+                        <nav>
+                            <Link to="/favorites">
+                                <FontAwesomeIcon icon={faHeart} className={styles.navIcon} />
+                                <span className={styles.navText}>Favorites</span>
+                            </Link>
+                        </nav>
+                    </div>
+                    <div className={styles.profile}>
+                        <button className={styles.profileButton} onClick={toggleProfileOptions}>
+                            <FontAwesomeIcon icon={faUser} />
+                        </button>
+                        <div className={styles.profileOptions} style={{ display: `${displayProfileOptions}` }}>
+                            {isPending ? (
+                                <Loading />
+                            ) : isAuthenticated ? (
+                                <div>
+                                    <div className={styles.profileEmail}>
+                                        <p style={{ marginRight: '6px' }}>{user?.email}</p>
+                                        <button disabled={true}><FontAwesomeIcon icon={faEnvelope} /></button>
+                                    </div>
+                                    <button className={styles.logoutButton} onClick={() => setDisplayDialogueBox("block")}>
+                                        Log Out
+                                        <FontAwesomeIcon icon={faDoorOpen} style={{ marginLeft: '10px' }} />
+                                    </button>
                                 </div>
-                                <div className={styles.profileEmail}>
-                                    <p style={{ marginRight: '6px' }}>{user?.email}</p>
-                                    <button disabled={true}><FontAwesomeIcon icon={faEnvelope} /></button>
+                            ) : (
+                                <div className={styles.loggedOut}>
+                                    <Link to="/signup">Sign Up</Link>
+                                    <Link to="/signin">Sign In</Link>
                                 </div>
-                                <button className={styles.logoutButton} onClick={() => setDisplayDialogueBox("block")}>
-                                    Log Out
-                                    <FontAwesomeIcon icon={faDoorOpen} style={{ marginLeft: '10px' }} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className={styles.loggedOut}>
-                                <Link to="/signup">Sign Up</Link>
-                                <Link to="/signin">Sign In</Link>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </header>
@@ -249,7 +262,6 @@ function SavedMovies() {
                                     onClick={() => {
                                         const movieTitle = item.title || item.name;
                                         const key = `${movieTitle}_${item.movie_id}`;
-                                        console.log(item.movie_id)
                                         setCachedData(key, item);
                                         navigate(`/movies/${key}`);
                                     }}
@@ -259,7 +271,7 @@ function SavedMovies() {
                                     >
                                         <button 
                                             className={styles.removeButton}
-                                            onClick={(e) => removeSavedMovie(item.movie_id, e)}
+                                            onClick={(e) => removeSavedMovie(item.movie_id, item.title, e)}
                                         >
                                             <FontAwesomeIcon icon={faXmark} />
                                         </button>

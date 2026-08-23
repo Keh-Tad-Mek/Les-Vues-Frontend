@@ -2,10 +2,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import homeStyles from './home.module.css';
 import MovieGrid from './movieGrid.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
-import { faPen } from '@fortawesome/free-solid-svg-icons';
-import { faDoorOpen } from '@fortawesome/free-solid-svg-icons';
+// Imported the requested Navigation Icons
+import { faEnvelope, faMagnifyingGlass, faUser, faPen, faDoorOpen, faHouse, faBookmark, faHeart } from '@fortawesome/free-solid-svg-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { filterUnique, cleanExpiredCache, getCachedData, setCachedData, updateCachedData } from '../utils/cacheUtils.js';
 import { useAuth } from '../lib/useAuth.jsx';
@@ -37,7 +35,6 @@ function Home() {
     const isFetching = useRef(false);
     const isFetchingSearch = useRef(false);
 
-    // Active query reference and AbortController reference
     const activeSearchQueryRef = useRef("");
     const abortControllerRef = useRef(null);
 
@@ -52,13 +49,10 @@ function Home() {
     const handleLogout = async () => {
         try {
             const response = await authClient.signOut();
-
             if (response?.error) {
                 console.error("Logout failed.")
-
                 return
             }
-
             setDisplayDialogueBox('none')
         } catch (error) {
             console.error("Error during log out.")
@@ -189,20 +183,18 @@ function Home() {
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                // Request was intentionally cancelled because a new search started
                 console.log(`Search for "${cleanQuery}" was aborted.`);
             } else {
                 console.error("Search error:", error);
             }
         } finally {
-            // ONLY release the lock if this controller was the last one created
             if (abortControllerRef.current === controller) {
                 isFetchingSearch.current = false;
             }
         }
     };
 
-    // --- SEARCH INTERSECTION OBSERVER ---
+
     const searchResultPaginRef = useCallback(node => {
         if (searchObserver.current) searchObserver.current.disconnect();
 
@@ -310,84 +302,62 @@ function Home() {
     return (
         <div className={homeStyles.root}>
             <header>
-                <h1
-                    style={{
-                        color: 'white',
-                        marginLeft: '20px'
-                    }}
-                >LesVues</h1>
-                <div className={homeStyles.Nav}>
-                    <nav>
-                        <Link to="/">Home</Link>
-                    </nav>
-                    <nav
-                        style={{
-                            marginLeft: '40px',
-                            marginRight: '40px'
-                        }}
-                    >
-                        <Link to="/savedMovies">Saved Movies</Link>
-                    </nav>
-                    <nav>
-                        <Link to="/favorites">Favorites</Link>
-                    </nav>
-                </div>
-                <div className={homeStyles.profile}>
-                    <button className={homeStyles.profileButton}
-                        onClick={toggleProfileOptions}
-                    >
-                        <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
-                    </button>
-                    <div className={homeStyles.profileOptions}
-                        style={{
-                            display: `${displayProfileOptions}`
-                        }}
-                    >
-                        {isPending ? (
-                            <Loading />
-                        ) : isAuthenticated ? (
-                            <div>
-                                <div className={homeStyles.profileName}>
-                                    <input
-                                        type="text"
-                                        value={user.name}
-                                        disabled="true"
-                                    />
-                                    <button>
-                                        <FontAwesomeIcon icon={faPen}></FontAwesomeIcon>
+                <h1 style={{ color: 'white', marginLeft: '20px' }}>LesVues</h1>
+                
+                {/* NEW WRAPPER for Navigation & Profile */}
+                <div className={homeStyles.actionContainer}>
+                    <div className={homeStyles.Nav}>
+                        <nav>
+                            <Link to="/">
+                                <FontAwesomeIcon icon={faHouse} className={homeStyles.navIcon} />
+                                <span className={homeStyles.navText}>Home</span>
+                            </Link>
+                        </nav>
+                        <nav>
+                            <Link to="/savedMovies">
+                                <FontAwesomeIcon icon={faBookmark} className={homeStyles.navIcon} />
+                                <span className={homeStyles.navText}>Saved Movies</span>
+                            </Link>
+                        </nav>
+                        <nav>
+                            <Link to="/favorites">
+                                <FontAwesomeIcon icon={faHeart} className={homeStyles.navIcon} />
+                                <span className={homeStyles.navText}>Favorites</span>
+                            </Link>
+                        </nav>
+                    </div>
+
+                    <div className={homeStyles.profile}>
+                        <button className={homeStyles.profileButton} onClick={toggleProfileOptions}>
+                            <FontAwesomeIcon icon={faUser} />
+                        </button>
+                        <div className={homeStyles.profileOptions} style={{ display: `${displayProfileOptions}` }}>
+                            {isPending ? (
+                                <Loading />
+                            ) : isAuthenticated ? (
+                                <div>
+                                    <div className={homeStyles.profileEmail}>
+                                        <p style={{ marginRight: '6px' }}>{user.email}</p>
+                                        <button disabled={true}>
+                                            <FontAwesomeIcon icon={faEnvelope} />
+                                        </button>
+                                    </div>
+                                    <button className={homeStyles.logoutButton} onClick={() => setDisplayDialogueBox("block")}>
+                                        Log Out
+                                        <FontAwesomeIcon icon={faDoorOpen} style={{ marginLeft: '10px' }} />
                                     </button>
                                 </div>
-                                <div className={homeStyles.profileEmail}>
-                                    <p
-                                        style={{
-                                            marginRight: '6px'
-                                        }}
-                                    >{user.email}</p>
-                                    <button disabled="true">
-                                        <FontAwesomeIcon icon={faEnvelope}></FontAwesomeIcon>
-                                    </button>
+                            ) : (
+                                <div className={homeStyles.loggedOut}>
+                                    <Link to="/signup">Sign Up</Link>
+                                    <Link to="/signin">Sign In</Link>
                                 </div>
-                                <button className={homeStyles.logoutButton}
-                                    onClick={() => setDisplayDialogueBox("block")}
-                                >
-                                    Log Out
-                                    <FontAwesomeIcon icon={faDoorOpen}
-                                        style={{
-                                            marginLeft: '10px'
-                                        }}
-                                    ></FontAwesomeIcon>
-                                </button>
-                            </div>
-                        ) : (
-                            <div className={homeStyles.loggedOut}>
-                                <Link to="/signup">Sign Up</Link>
-                                <Link to="/signin">Sign In</Link>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
-
             </header>
+
             <div className={homeStyles.search}>
                 <div className={homeStyles.searchWrapper}>
                     <div className={homeStyles.searchField}>
@@ -439,12 +409,11 @@ function Home() {
                     <div ref={lastSeriesElementRef} style={{ height: '20px' }} />
                 </div>
             </div>
+
             {displayDialogueBox === "block" && (
-                <div
-                    className={homeStyles.overlay}
-                    onClick={() => setDisplayDialogueBox('none')}
-                />
+                <div className={homeStyles.overlay} onClick={() => setDisplayDialogueBox('none')} />
             )}
+            
             <div className={homeStyles.dialogueBox}
                 style={{
                     width: 'max-content',
@@ -455,51 +424,21 @@ function Home() {
                     display: `${displayDialogueBox}`
                 }}
             >
-
                 <div>
-                    <p
-                        style={{
-                            fontSize: '20px',
-                            color: 'white',
-                            fontFamily: 'monospace',
-                        }}
-                    >Are you sure you want to log out</p>
-                    <div className={homeStyles.dialogueBoxOptions}
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                        }}
-                    >
+                    <p style={{ fontSize: '20px', color: 'white', fontFamily: 'monospace' }}>
+                        Are you sure you want to log out
+                    </p>
+                    <div className={homeStyles.dialogueBoxOptions} style={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <button
-                            style={{
-                                padding: '10px',
-                                width: '90px',
-                                border: 'none',
-                                borderRadius: '20px',
-                                backgroundColor: '#ff4040',
-                                color: 'white'
-                            }}
-
+                            style={{ padding: '10px', width: '90px', border: 'none', borderRadius: '20px', backgroundColor: '#ff4040', color: 'white', cursor: 'pointer' }}
                             onClick={handleLogout}
                         >Yes</button>
                         <button
-                            style={{
-                                padding: '10px',
-                                width: '90px',
-                                border: '1px solid #666666',
-                                borderRadius: '20px',
-                                marginLeft: '10px',
-                                backgroundColor: '#505050',
-                                color: 'white'
-                            }}
-
-                            onClick={() => {
-                                setDisplayDialogueBox('none')
-                            }}
+                            style={{ padding: '10px', width: '90px', border: '1px solid #666666', borderRadius: '20px', marginLeft: '10px', backgroundColor: '#505050', color: 'white', cursor: 'pointer' }}
+                            onClick={() => setDisplayDialogueBox('none')}
                         >No</button>
                     </div>
                 </div>
-
             </div>
         </div>
     );
